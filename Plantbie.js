@@ -11,17 +11,25 @@ export class Plantbie extends Scene {
 
         // At the beginning of our program, load one of each of these shape definitions onto the GPU.
         this.shapes = {
-
+         peashooter: new Shape_From_File("./assets/peashooter.obj"),
         };
 
         // *** Materials
         this.materials = {
-
+        peashooter: new Material(new defs.Phong_Shader(), {
+                ambient: 0.67,
+                diffusivity: 0.5,
+                specularity: 0.05,
+                color: hex_color("#00FF00")
+            }),
         }
         this.starting = false;
         this.resetting = true;
         this.grid_index = [0, 0];
         this.buffer_index = 0;
+        this.current_planet = "default"
+        this.current_empty = "empty"
+        const grass_grid = new Map();
 
         this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
     }
@@ -42,14 +50,55 @@ export class Plantbie extends Scene {
         this.new_line();
         this.key_triggered_button("Prev Plant", ["ArrowLeft"], () => this.buffer_index = Math.min(0, this.buffer_index-1));
         this.new_line();
-        this.key_triggered_button("Plant", ["Enter"], () => );// need to insert into array of plants;
+        this.key_triggered_button("Plant", ["Enter"], () => this.grass_grid.set(this.grid_index, this.current_planet));// need to insert into array of plants;
         this.new_line();
-        this.key_triggered_button("Remove Plant", ["Escape"], () => );// need to remove from array of plants
+        this.key_triggered_button("Remove Plant", ["Escape"], () => this.grass_grid.set(this.grid_index, this.current_empty));// need to remove from array of plants
         this.new_line();
+    }
+    plant_peashooter() {
+        // add a new peashooter at the current grid index if not already present
+        const position = [...this.grid_index];
+        if (!this.plants.some(plant => plant[0] === position[0] && plant[1] === position[1])) {
+            this.plants.push(position);
+        }
+    }
+
+    remove_peashooter() {
+        // remove peashooter at the current grid index if present
+        this.plants = this.plants.filter(plant => plant[0] !== this.grid_index[0] || plant[1] !== this.grid_index[1]);
     }
 
     display(context, program_state) {
+        // display():  Called once per frame of animation.
+        // Setup -- This part sets up the scene's overall camera matrix, projection matrix, and lights:
+        if (!context.scratchpad.controls) {
+            this.children.push(context.scratchpad.controls = new defs.Movement_Controls());
+            // Define the global camera and projection matrices, which are stored in program_state.
+            program_state.set_camera(this.initial_camera_location);
+        }
+        program_state.projection_transform = Mat4.perspective(
+            Math.PI / 4, context.width / context.height, .1, 1000);
 
+        const t = program_state.animation_time / 1000;
+
+        // Define the light for the scene
+        const light_position = vec4(0, 10, 10, 1);
+        program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
+
+        // Draw the peashooters in the plant array
+        for (const plant of this.plants) {
+            let plant_transform = Mat4.identity()
+                .times(Mat4.translation(plant[1] * 2 - 4, 0, plant[0] * 2 - 4));
+            this.shapes.peashooter.draw(context, program_state, plant_transform, this.materials.peashooter);
+        }
+
+        // Draw the selected peashooter at the current grid position
+        if (this.starting) {
+            let selected_transform = Mat4.identity()
+                .times(Mat4.translation(this.grid_index[1] * 2 - 4, 0, this.grid_index[0] * 2 - 4))
+                .times(Mat4.scale(1.1, 1.1, 1.1));
+            this.shapes.peashooter.draw(context, program_state, selected_transform, this.materials.peashooter.override({color: hex_color("#FF0000")}));
+        }
     }
 }
 
