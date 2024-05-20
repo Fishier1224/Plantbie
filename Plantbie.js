@@ -85,7 +85,11 @@ export class Plantbie extends Scene {
         const light_position = vec4(0, 10, 10, 1);
         program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
 
-        // Draw the peashooters in the plant array
+        let plant_transform = Mat4.identity()
+                .times(Mat4.translation(plant[1] * 2 - 4, 0, plant[0] * 2 - 4));
+        this.shapes.peashooter.draw(context, program_state, plant_transform, this.materials.peashooter);
+
+/*        // Draw the peashooters in the plant array
         for (const plant of this.plants) {
             let plant_transform = Mat4.identity()
                 .times(Mat4.translation(plant[1] * 2 - 4, 0, plant[0] * 2 - 4));
@@ -99,8 +103,11 @@ export class Plantbie extends Scene {
                 .times(Mat4.scale(1.1, 1.1, 1.1));
             this.shapes.peashooter.draw(context, program_state, selected_transform, this.materials.peashooter.override({color: hex_color("#FF0000")}));
         }
+
+ */
     }
 }
+
 
 class Gouraud_Shader extends Shader {
     // This is a Shader using Phong_Shader as template
