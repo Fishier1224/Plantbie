@@ -1,8 +1,61 @@
 import {defs, tiny} from './examples/common.js';
+import {Shape_From_File} from "./examples/obj-file-demo.js";
 
 const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene,
 } = tiny;
+
+class Square extends Shape {
+    constructor() {
+        super("position", "normal");
+        this.arrays.position = Vector3.cast(
+            [-0.5, 0, -0.5], [0.5, 0, -0.5], [-0.5, 0, 0.5],
+            [0.5, 0, -0.5], [0.5, 0, 0.5], [-0.5, 0, 0.5]
+        );
+        this.arrays.normal = Vector3.cast(
+            [0, 1, 0], [0, 1, 0], [0, 1, 0],
+            [0, 1, 0], [0, 1, 0], [0, 1, 0]
+        );
+        this.arrays.texture_coord = Vector.cast(
+            [0, 0], [1, 0], [0, 1],
+            [1, 0], [1, 1], [0, 1]
+        );
+        this.indices = false;
+
+        this.arrays.position = this.arrays.position.concat(Vector3.cast(
+            [-0.55, 0, -0.55], [0.55, 0, -0.55], [-0.55, 0, 0.55],
+            [0.55, 0, -0.55], [0.55, 0, 0.55], [-0.55, 0, 0.55]
+        ));
+        this.arrays.normal = this.arrays.normal.concat(Vector3.cast(
+            [0, 1, 0], [0, 1, 0], [0, 1, 0],
+            [0, 1, 0], [0, 1, 0], [0, 1, 0]
+        ));
+        this.arrays.texture_coord = this.arrays.texture_coord.concat(Vector.cast(
+            [0, 0], [1, 0], [0, 1],
+            [1, 0], [1, 1], [0, 1]
+        ));
+
+    }
+}
+/*
+class Outline_Square extends Shape {
+    constructor() {
+        super("position", "color");
+
+        this.arrays.position = Vector3.cast(
+            [-0.5, 0, -0.5], [0.5, 0, -0.5],
+            [0.5, 0, -0.5], [0.5, 0, 0.5],
+            [0.5, 0, 0.5], [-0.5, 0, 0.5],
+            [-0.5, 0, 0.5], [-0.5, 0, -0.5]
+        );
+
+        const white = color(1, 1, 1, 1);
+        this.arrays.color = [white, white, white, white, white, white, white, white];
+
+        this.indexed = false;
+    }
+}
+ */
 
 export class Plantbie extends Scene {
     constructor() {
@@ -11,16 +64,30 @@ export class Plantbie extends Scene {
 
         // At the beginning of our program, load one of each of these shape definitions onto the GPU.
         this.shapes = {
-         peashooter: new Shape_From_File("./assets/peashooter.obj"),
+            peashooter: new Shape_From_File("./assets/peashooter.obj"),
+            square: new Square(),
+            //outlined_square: new Outlined_Square(),
         };
 
         // *** Materials
         this.materials = {
-        peashooter: new Material(new defs.Phong_Shader(), {
+            peashooter: new Material(new defs.Phong_Shader(), {
                 ambient: 0.67,
                 diffusivity: 0.5,
                 specularity: 0.05,
                 color: hex_color("#00FF00")
+            }),
+            square: new Material(new defs.Phong_Shader(), {
+                ambient: 0.5,
+                diffusivity: 0.5,
+                specularity: 0.05,
+                color: hex_color("#006400")
+            }),
+            outlined_square: new Material(new defs.Phong_Shader(), { // Material for outline
+                ambient: 0.5,
+                diffusivity: 0.5,
+                specularity: 0.05,
+                color: hex_color("#002800")
             }),
         }
         this.starting = false;
@@ -32,6 +99,21 @@ export class Plantbie extends Scene {
         const grass_grid = new Map();
 
         this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
+
+        this.grid_positions = [];
+        this.create_grid();
+    }
+
+    create_grid() {
+        const rows = 5;
+        const cols = 9;
+        const size = 2;
+
+        for (let i = 0; i < rows; i++) {
+            for (let j = 0; j < cols; j++) {
+                this.grid_positions.push([j * size, 0, i * size]);
+            }
+        }
     }
 
     make_control_panel() {
@@ -86,9 +168,21 @@ export class Plantbie extends Scene {
         program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
 
         let plant_transform = Mat4.identity()
-                .times(Mat4.translation(plant[1] * 2 - 4, 0, plant[0] * 2 - 4));
+                .times(Mat4.translation(0, 0, - 4));
         this.shapes.peashooter.draw(context, program_state, plant_transform, this.materials.peashooter);
 
+        for (const pos of this.grid_positions) { // Draw each square in the grid
+            let square_transform = Mat4.identity()
+                .times(Mat4.translation(pos[0] - 8, pos[1], pos[2] - 4))
+                .times(Mat4.scale(1.36, 1.36, 1.36));
+
+            // Draw the inner square
+            this.shapes.square.draw(context, program_state, square_transform, this.materials.square);
+
+            // Draw the outline
+            let outline_transform = square_transform.times(Mat4.scale(1.3, 1.3, 1.3)); // Slightly larger for outline
+            this.shapes.square.draw(context, program_state, outline_transform, this.materials.outlined_square);
+        }
 /*        // Draw the peashooters in the plant array
         for (const plant of this.plants) {
             let plant_transform = Mat4.identity()
