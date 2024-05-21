@@ -1,8 +1,10 @@
 import {defs, tiny} from './examples/common.js';
 import {Shape_From_File} from "./examples/obj-file-demo.js";
+import {Color_Phong_Shader, Shadow_Textured_Phong_Shader,
+    Depth_Texture_Shader_2D, Buffered_Texture, LIGHT_DEPTH_TEX_SIZE} from './examples/shadow-demo-shaders.js'
 
 const {
-    Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene,
+    Vector, Vector3, vec, vec3, vec4, color, hex_color, Matrix, Mat4, Light, Shape, Shader, Texture, Material, Scene,
 } = tiny;
 
 class Square extends Shape {
@@ -89,10 +91,13 @@ export class Plantbie extends Scene {
             square: new Square(),
             sun: new Shape_From_File("./assets/sphere.obj"),
             vertical_rectangle: new VerticalRectangle(),
+            cloud: new Shape_From_File("./assets/cloud.obj"),
             //sky: new Sky(),
             //cloud: new Cloud(),
             //outlined_square: new Outlined_Square(),
         };
+
+        const textured = new defs.Textured_Phong();
 
         // *** Materials
         this.materials = {
@@ -101,6 +106,12 @@ export class Plantbie extends Scene {
                 diffusivity: 0.5,
                 specularity: 0.05,
                 color: hex_color("#00FF00")
+            }),
+            cloud: new Material(new defs.Phong_Shader(), {
+                ambient: 0.9,
+                diffusivity: 0.9,
+                specularity: 1,
+                color: hex_color("#FFFFFF")
             }),
             square: new Material(new defs.Phong_Shader(), {
                 ambient: 0.5,
@@ -120,12 +131,14 @@ export class Plantbie extends Scene {
                 specularity: 0.05,
                 color: hex_color("#FFD700")  // Bright yellow for the sun
             }),
-            vertical_rectangle: new Material(new defs.Phong_Shader(), {
-                color: hex_color("#ADD8E6"),
-                ambient: 0.5,
-                diffusivity: 0.5,
-                specularity: 0.05,
-            })
+            vertical_rectangle: new Material(textured, {
+                color: hex_color("#87CEEB"),
+                ambient: 1,
+                diffusivity: 0.9,
+                specularity: 1,
+                texture: new Texture("assets/sky-gradient.jpg")
+            }),
+            //{ambient: 1, diffusivity: .9, specularity: 1, color: hex_color("#000000")
             /*
             cloud: new Material(new defs.Textured_Phong(), {
                 color: hex_color("#FFFFFF"),
@@ -635,6 +648,21 @@ export class Plantbie extends Scene {
             .times(Mat4.rotation(Math.PI / 2, 0, 1, 0))
             .times(Mat4.scale(10, 10, 20));
         this.shapes.vertical_rectangle.draw(context, program_state, model_transform2, this.materials.vertical_rectangle);
+
+        let cloud_transform = Mat4.identity()
+            .times(Mat4.translation(Math.sin(t), 6.5, -4)) // Floating up and down
+            .times(Mat4.scale(2, 2, 2)); // Adjust scale as needed
+        this.shapes.cloud.draw(context, program_state, cloud_transform, this.materials.cloud);
+
+        let cloud_transform2 = Mat4.identity()
+            .times(Mat4.translation(-6+ Math.sin(t), 6.5 , -4)) // Floating up and down
+            .times(Mat4.scale(-2, -2, -2)); // Adjust scale as needed
+        this.shapes.cloud.draw(context, program_state, cloud_transform2, this.materials.cloud);
+
+        let cloud_transform3 = Mat4.identity()
+            .times(Mat4.translation(7+ Math.sin(t), 6.5, -4)) // Floating up and down
+            .times(Mat4.scale(-2, -2, -2)); // Adjust scale as needed
+        this.shapes.cloud.draw(context, program_state, cloud_transform3, this.materials.cloud);
 
 /*        // Draw the peashooters in the plant array
         for (const plant of this.plants) {
