@@ -191,15 +191,33 @@ export class Plantbie extends Scene {
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
         this.key_triggered_button("Start Game", ["s"], () => this.starting = !this.starting);
         this.new_line();
-        this.key_triggered_button("Move Up", ["w"], () => this.grid_index[0] = Math.min(0, this.grid_index[0]-1));
+        this.key_triggered_button("select row one", ["1"], () => this.grid_index[0] = 0);
         this.new_line();
-        this.key_triggered_button("Move Down", ["s"], () => this.grid_index[0] = Math.max(4, this.grid_index[0]+1));
+        this.key_triggered_button("select row two", ["2"], () => this.grid_index[0] = 1);
         this.new_line();
-        this.key_triggered_button("Move Left", ["a"], () => this.grid_index[1] = Math.min(0, this.grid_index[1]-1));
+        this.key_triggered_button("select row three", ["3"], () => this.grid_index[0] = 2);
         this.new_line();
-        this.key_triggered_button("Move Right", ["d"], () => this.grid_index[1] = Math.max(0, this.grid_index[1]+1));
+        this.key_triggered_button("select row four", ["4"], () => this.grid_index[0] = 3);
         this.new_line();
-        this.key_triggered_button("Next Plant", ["ArrowRight"], () => this.buffer_index = Math.max(9, this.buffer_index+1));
+        this.key_triggered_button("select row five", ["5"], () => this.grid_index[0] = 4);
+        this.new_line();
+        this.key_triggered_button("select column one", ["q"], () => this.grid_index[1] = 0);
+        this.new_line();
+        this.key_triggered_button("select column two", ["w"], () => this.grid_index[1] = 1);
+        this.new_line();
+        this.key_triggered_button("select column three", ["e"], () => this.grid_index[1] = 2);
+        this.new_line();
+        this.key_triggered_button("select column four", ["r"], () => this.grid_index[1] = 3);
+        this.new_line();
+        this.key_triggered_button("select column five", ["t"], () => this.grid_index[1] = 4);
+        this.new_line();
+        this.key_triggered_button("select column six", ["y"], () => this.grid_index[1] = 5);
+        this.new_line();
+        this.key_triggered_button("select column seven", ["u"], () => this.grid_index[1] = 6);
+        this.new_line();
+        this.key_triggered_button("select column eight", ["i"], () => this.grid_index[1] = 7);
+        this.new_line();
+        this.key_triggered_button("select column nine", ["o"], () => this.grid_index[1] = 8);
         this.new_line();
         this.key_triggered_button("Prev Plant", ["ArrowLeft"], () => this.buffer_index = Math.min(0, this.buffer_index-1));
         this.new_line();
@@ -623,14 +641,24 @@ export class Plantbie extends Scene {
                 .times(Mat4.translation(0, 1, 0));
         this.shapes.peashooter.draw(context, program_state, plant_transform, this.materials.peashooter);
 
-
-        for (const pos of this.grid_positions) { // Draw each square in the grid
+        const ind = this.grid_index[0] * 9 + this.grid_index[1];
+        for (let i=0; i<this.grid_positions.length; i++) {
+            const pos = this.grid_positions[i]// Draw each square in the grid
             let square_transform = Mat4.identity()
                 .times(Mat4.translation(pos[0] - 8, pos[1], pos[2] - 4))
                 .times(Mat4.scale(1.36, 1.36, 1.36));
 
             // Draw the inner square
-            this.shapes.square.draw(context, program_state, square_transform, this.materials.square);
+            if(i === ind){
+                this.materials.square.color = this.select_color;
+                this.shapes.square.draw(context, program_state, square_transform, this.materials.square.override({color:hex_color("FFFF00")}));
+                this.materials.square.color = this.normal_color;
+                console.log(i);
+                console.log("ni"+ind);
+            }
+            else{
+                this.shapes.square.draw(context, program_state, square_transform, this.materials.square.override({color:hex_color("006400")}));
+            }
 
             // Draw the outline
             let outline_transform = square_transform.times(Mat4.scale(1.3, 1.3, 1.3)); // Slightly larger for outline
