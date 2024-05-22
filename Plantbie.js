@@ -92,7 +92,8 @@ export class Plantbie extends Scene {
             sun: new Shape_From_File("./assets/sphere.obj"),
             vertical_rectangle: new VerticalRectangle(),
             cloud: new Shape_From_File("./assets/cloud.obj"),
-            //sky: new Sky(),
+            sky: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(4),
+            ground: new defs.Square(),
             //cloud: new Cloud(),
             //outlined_square: new Outlined_Square(),
         };
@@ -114,9 +115,9 @@ export class Plantbie extends Scene {
                 color: hex_color("#FFFFFF")
             }),
             square: new Material(new defs.Phong_Shader(), {
-                ambient: 0.5,
-                diffusivity: 0.5,
-                specularity: 0.05,
+                ambient: 1,
+                diffusivity: 1,
+                specularity: 1,
                 color: hex_color("#006400")
             }),
             outlined_square: new Material(new defs.Phong_Shader(), { // Material for outline
@@ -138,6 +139,18 @@ export class Plantbie extends Scene {
                 specularity: 1,
                 texture: new Texture("assets/sky-gradient.jpg")
             }),
+            sky: new Material(new defs.Phong_Shader(), {
+                ambient: 0.9,
+                diffusivity: 0.1,
+                specularity: 0,
+                color: hex_color("#87CEEB"),
+            }),
+            ground: new Material(new defs.Phong_Shader(), {
+                ambient: 0.5,
+                diffusivity: 0.5,
+                specularity: 0.05,
+                color: hex_color("#666666")
+            }),
             //{ambient: 1, diffusivity: .9, specularity: 1, color: hex_color("#000000")
             /*
             cloud: new Material(new defs.Textured_Phong(), {
@@ -148,15 +161,13 @@ export class Plantbie extends Scene {
              */
         }
         this.starting = false;
-        this.resetting = true;
         this.grid_index = [0, 0];
         this.buffer_index = 0;
         this.current_planet = "default"
         this.current_empty = "empty"
         const grass_grid = new Map();
 
-        this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
-
+        this.initial_camera_location = Mat4.look_at(vec3(0, 5, 15), vec3(0, 1.5, 1.5), vec3(0, 1.5, 1.5))
         this.grid_positions = [];
         this.create_grid();
     }
@@ -187,45 +198,39 @@ export class Plantbie extends Scene {
         }
     }
 
+
+
     make_control_panel() {
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
         this.key_triggered_button("Start Game", ["s"], () => this.starting = !this.starting);
         this.new_line();
         this.key_triggered_button("select row one", ["1"], () => this.grid_index[0] = 0);
-        this.new_line();
         this.key_triggered_button("select row two", ["2"], () => this.grid_index[0] = 1);
-        this.new_line();
         this.key_triggered_button("select row three", ["3"], () => this.grid_index[0] = 2);
-        this.new_line();
         this.key_triggered_button("select row four", ["4"], () => this.grid_index[0] = 3);
-        this.new_line();
         this.key_triggered_button("select row five", ["5"], () => this.grid_index[0] = 4);
         this.new_line();
         this.key_triggered_button("select column one", ["q"], () => this.grid_index[1] = 0);
-        this.new_line();
         this.key_triggered_button("select column two", ["w"], () => this.grid_index[1] = 1);
-        this.new_line();
         this.key_triggered_button("select column three", ["e"], () => this.grid_index[1] = 2);
-        this.new_line();
         this.key_triggered_button("select column four", ["r"], () => this.grid_index[1] = 3);
-        this.new_line();
         this.key_triggered_button("select column five", ["t"], () => this.grid_index[1] = 4);
-        this.new_line();
         this.key_triggered_button("select column six", ["y"], () => this.grid_index[1] = 5);
-        this.new_line();
         this.key_triggered_button("select column seven", ["u"], () => this.grid_index[1] = 6);
-        this.new_line();
         this.key_triggered_button("select column eight", ["i"], () => this.grid_index[1] = 7);
-        this.new_line();
         this.key_triggered_button("select column nine", ["o"], () => this.grid_index[1] = 8);
         this.new_line();
+
         this.key_triggered_button("Prev Plant", ["ArrowLeft"], () => this.buffer_index = Math.min(0, this.buffer_index-1));
+        this.key_triggered_button("Prev Plant", ["ArrowRight"], () => this.buffer_index = Math.min(0, this.buffer_index+1));
         this.new_line();
         this.key_triggered_button("Plant", ["Enter"], () => this.grass_grid.set(this.grid_index, this.current_planet));// need to insert into array of plants;
-        this.new_line();
         this.key_triggered_button("Remove Plant", ["Escape"], () => this.grass_grid.set(this.grid_index, this.current_empty));// need to remove from array of plants
         this.new_line();
+        this.key_triggered_button("Rotate View Left", ["a"], () => this.initial_camera_location.times(Mat4.rotation(Math.PI / 2, 0, 1, 0)));
+        this.key_triggered_button("Rotate View Right", ["d"], () => this.initial_camera_location.times(Mat4.rotation(-1 * Math.PI / 2, 0, 1, 0)));
     }
+
 
     mouse_draw_obj(context, program_state) {
         // no button clicks? return
@@ -671,27 +676,43 @@ export class Plantbie extends Scene {
         this.shapes.sun.draw(context, program_state, model_transform, this.materials.sun);
 
         //const model_transform_vertical = model_transform.times(Mat4.rotation(Math.PI / 2, 1, 0, 0)).times(Mat4.translation(0, 0, -0.25)); // Adjust translation as needed
-        let model_transform2 = Mat4.identity()
-            .times(Mat4.translation(0, 5, -5))
-            .times(Mat4.rotation(Math.PI / 2, 0, 1, 0))
-            .times(Mat4.scale(10, 10, 20));
-        this.shapes.vertical_rectangle.draw(context, program_state, model_transform2, this.materials.vertical_rectangle);
+        // let model_transform2 = Mat4.identity()
+        //     .times(Mat4.translation(0, 5, -5))
+        //     .times(Mat4.rotation(Math.PI / 2, 0, 1, 0))
+        //     .times(Mat4.scale(10, 10, 20));
+        // this.shapes.vertical_rectangle.draw(context, program_state, model_transform2, this.materials.vertical_rectangle);
 
+        // Position the clouds
         let cloud_transform = Mat4.identity()
+            .times(Mat4.translation(0, 1.7, 1.2))
             .times(Mat4.translation(Math.sin(t), 6.5, -4)) // Floating up and down
             .times(Mat4.scale(2, 2, 2)); // Adjust scale as needed
         this.shapes.cloud.draw(context, program_state, cloud_transform, this.materials.cloud);
 
         let cloud_transform2 = Mat4.identity()
+            .times(Mat4.translation(0, 0.2, 0.9))
             .times(Mat4.translation(-6+ Math.sin(t), 6.5 , -4)) // Floating up and down
-            .times(Mat4.scale(-2, -2, -2)); // Adjust scale as needed
+            .times(Mat4.scale(2, 2, 2)); // Adjust scale as needed
         this.shapes.cloud.draw(context, program_state, cloud_transform2, this.materials.cloud);
 
         let cloud_transform3 = Mat4.identity()
+            .times(Mat4.translation(0, 0.2, 0))
             .times(Mat4.translation(7+ Math.sin(t), 6.5, -4)) // Floating up and down
-            .times(Mat4.scale(-2, -2, -2)); // Adjust scale as needed
+            .times(Mat4.scale(2, 2, 2)); // Adjust scale as needed
         this.shapes.cloud.draw(context, program_state, cloud_transform3, this.materials.cloud);
 
+        // Position the sky background
+        let sky_placement = Mat4.identity();
+        sky_placement = sky_placement.times(Mat4.translation(80,0, -200)).times(Mat4.scale(400,400,400));
+        this.shapes.sky.draw(context, program_state, sky_placement, this.materials.sky);
+
+        // Position the ground
+        let ground_placement = Mat4.identity();
+        ground_placement = ground_placement
+            .times(Mat4.translation(0,-10, 0))
+            .times(Mat4.scale(80, 80, 80))
+            .times(Mat4.rotation(Math.PI / 2, 1, 0, 0));
+        this.shapes.ground.draw(context, program_state, ground_placement, this.materials.ground);
 /*        // Draw the peashooters in the plant array
         for (const plant of this.plants) {
             let plant_transform = Mat4.identity()
