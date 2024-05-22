@@ -94,6 +94,7 @@ export class Plantbie extends Scene {
             cloud: new Shape_From_File("./assets/cloud.obj"),
             sky: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(4),
             ground: new defs.Square(),
+            headstone: new Shape_From_File("./assets/headstone.obj"),
             peashooter_hair: new Shape_From_File("./assets/peashooter_hair.obj"),
             peashooter_neck: new Shape_From_File("./assets/peashooter_neck_2.obj"),
             peashooter_leaf: new Shape_From_File("./assets/melon_leaf.obj"), //turns out melon leaf is better rendered than peashooter leaf
@@ -141,6 +142,12 @@ export class Plantbie extends Scene {
                 diffusivity: 0.5,
                 specularity: 0.05,
                 color: hex_color("#FFD700")  // Bright yellow for the sun
+            }),
+            headstone: new Material(new defs.Phong_Shader(), {
+                ambient: 1,
+                disffusivity: 0.5,
+                specularity: 1,
+                color: hex_color("#000000")
             }),
             vertical_rectangle: new Material(textured, {
                 color: hex_color("#87CEEB"),
@@ -752,6 +759,10 @@ export class Plantbie extends Scene {
         let model_transform = Mat4.identity()
                 .times(Mat4.translation(10, 7, -2));
         this.shapes.sun.draw(context, program_state, model_transform, this.materials.sun);
+        let headstone_transform = Mat4.identity()
+                .times(Mat4.translation(10, 0, -2));
+        this.shapes.headstone.draw(context, program_state, headstone_transform, this.materials.headstone);
+
 
         //const model_transform_vertical = model_transform.times(Mat4.rotation(Math.PI / 2, 1, 0, 0)).times(Mat4.translation(0, 0, -0.25)); // Adjust translation as needed
         // let model_transform2 = Mat4.identity()
