@@ -185,6 +185,7 @@ export class Plantbie extends Scene {
 
         this.initial_camera_location = Mat4.look_at(vec3(0, 5, 15), vec3(0, 1.5, 1.5), vec3(0, 1.5, 1.5))
         this.grid_positions = [];
+        this.change_view = false;
         this.create_grid();
     }
 
@@ -287,8 +288,18 @@ export class Plantbie extends Scene {
         this.key_triggered_button("Plant", ["Enter"], () => this.grass_grid.set(this.grid_index, this.current_planet));// need to insert into array of plants;
         this.key_triggered_button("Remove Plant", ["Escape"], () => this.grass_grid.set(this.grid_index, this.current_empty));// need to remove from array of plants
         this.new_line();
-        this.key_triggered_button("Rotate View Left", ["a"], () => this.initial_camera_location.times(Mat4.rotation(Math.PI / 2, 0, 1, 0)));
-        this.key_triggered_button("Rotate View Right", ["d"], () => this.initial_camera_location.times(Mat4.rotation(-1 * Math.PI / 2, 0, 1, 0)));
+        this.key_triggered_button("Rotate View Left", ["a"], () =>
+            {
+                this.change_view = true;
+                this.initial_camera_location = this.initial_camera_location.times(Mat4.rotation(Math.PI / 2, 0, 1, 0));
+            }
+        );
+        this.key_triggered_button("Rotate View Right", ["d"], () =>
+            {
+                this.change_view = true;
+                this.initial_camera_location = this.initial_camera_location.times(Mat4.rotation(-1 * Math.PI / 2, 0, 1, 0));
+            }
+        );
     }
 
 
@@ -688,10 +699,14 @@ export class Plantbie extends Scene {
     display(context, program_state) {
         // display():  Called once per frame of animation.
         // Setup -- This part sets up the scene's overall camera matrix, projection matrix, and lights:
-        if (!context.scratchpad.controls) {
+        if(this.change_view){
+            program_state.set_camera(this.initial_camera_location);
+            this.change_view = false;
+        }
+        else if (!context.scratchpad.controls) {
             this.children.push(context.scratchpad.controls = new defs.Movement_Controls());
             // Define the global camera and projection matrices, which are stored in program_state.
-            program_state.set_camera(this.initial_camera_location);
+            program_state.set_camera(this.initial_camera_location)
         }
         program_state.projection_transform = Mat4.perspective(
             Math.PI / 4, context.width / context.height, .1, 1000);
