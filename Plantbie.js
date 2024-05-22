@@ -1,5 +1,6 @@
 import {defs, tiny} from './examples/common.js';
 import {Shape_From_File} from "./examples/obj-file-demo.js";
+import { Text_Line } from './examples/text-demo.js';
 import {Color_Phong_Shader, Shadow_Textured_Phong_Shader,
     Depth_Texture_Shader_2D, Buffered_Texture, LIGHT_DEPTH_TEX_SIZE} from './examples/shadow-demo-shaders.js'
 
@@ -81,6 +82,9 @@ export class Plantbie extends Scene {
         this.mousex;
         this.mousey;
 
+        this.start = false;
+        this.loading_sound = new Audio("./assets/loading_sound.mp3");
+        this.game_sound = new Audio("./assets/game_sound.mp3");
         // Drawing queue for purchased items
         this.userdraw = "none";
         this.item_queue = [];
@@ -105,6 +109,7 @@ export class Plantbie extends Scene {
             watermelon_bullet: new Shape_From_File("./assets/melon_bullet.obj"),
             watermelon_head: new Shape_From_File("./assets/melon_head.obj"),
             watermelon_eyes: new Shape_From_File("./assets/melon_eye.obj"),
+            text: new Text_Line(35),
             //cloud: new Cloud(),
             //outlined_square: new Outlined_Square(),
         };
@@ -113,6 +118,25 @@ export class Plantbie extends Scene {
 
         // *** Materials
         this.materials = {
+            // menu
+            text_image: new Material(new defs.Textured_Phong(), {
+                ambient: 1,
+                diffusivity: 0,
+                specularity: 0,
+                texture: new Texture("./assets/text.png")}),
+            menu: new Material(textured, {
+                ambient: 0.9,
+                diffusivity: .9,
+                color: hex_color("#000000"),
+                texture: new Texture("assets/sky-gradient.jpg")
+            }),
+            menubuttons: new Material(textured, {
+                ambient: 0.9,
+                diffusivity: 1,
+                specularity: 1,
+                color: hex_color("#FFFFFF"),
+                texture: new Texture("assets/sky-gradient.png")}),
+            //characters
             peashooter: new Material(new defs.Phong_Shader(), {
                 ambient: 0.67,
                 diffusivity: 0.5,
@@ -174,6 +198,10 @@ export class Plantbie extends Scene {
                 specularity: 0.05,
                 color: hex_color("#000000")
             }),
+            black: new Material(new defs.Phong_Shader(), {
+                ambient: 0.4,
+                diffusivity: 0.6,
+                color: hex_color("#000000")}),
             //{ambient: 1, diffusivity: .9, specularity: 1, color: hex_color("#000000")
             /*
             cloud: new Material(new defs.Textured_Phong(), {
@@ -706,6 +734,72 @@ export class Plantbie extends Scene {
     display(context, program_state) {
         // display():  Called once per frame of animation.
         // Setup -- This part sets up the scene's overall camera matrix, projection matrix, and lights:
+        const t = program_state.animation_time / 1000;
+            const time_in_sec = t;
+            const time_loading_screen = 0;
+            const time_loading_screen_end = 9;
+            this.game_sound.play();
+            //let loading_transform = Mat4.identity().times(Mat4.translation(-7.5,13,11,0)).times(Mat4.scale(1.2,1.2,0.2,5));
+            //this.shapes.text.set_string("loading...", context.context);
+            //this.shapes.text.draw(context, program_state, loading_transform.times(Mat4.scale(.35, .35, .50)), this.materials.text_image);
+            /*if (time_in_sec > time_loading_screen && time_in_sec < time_loading_screen_end) {
+                let model_transform = Mat4.identity();
+                this.loading_sound.play();
+                console.log("hi")
+                this.shapes.square.draw(context, program_state, model_transform.times(Mat4.translation(-5,9,10,0)).times(Mat4.scale(15, 10, 1)),this.materials.square);
+
+                    let loading_transform = Mat4.identity().times(Mat4.translation(-7.5,13,11,0)).times(Mat4.scale(1.2,1.2,0.2,5));
+                    this.shapes.text.set_string("loading...", context.context);
+                    this.shapes.text.draw(context, program_state, loading_transform.times(Mat4.scale(.35, .35, .50)), this.materials.text_image);
+
+                    let max_angle = .1 * Math.PI;
+
+                    const time_in_sec = t/1000;
+                    const time_fish1 = 3;
+
+                    if (time_in_sec > time_fish1) {
+                        let fish1_trans = model_transform.times(Mat4.translation(-15, 10, 11))
+                                                  .times(Mat4.scale(0.8,0.6,0.5,1));
+                        this.shapes.peashooter.draw(context, program_state, fish1_trans, this.materials.peashooter);
+                    }
+
+                    const time_fish2 = 4;
+
+                    if (time_in_sec > time_fish2) {
+                        let fish2_trans = model_transform.times(Mat4.translation(-10, 10, 11))
+                                                      .times(Mat4.scale(0.8,0.6,0.5,1));
+                        this.shapes.peashooter.draw(context, program_state, fish2_trans, this.materials.peashooter);
+                    }
+
+                    const time_fish3 = 5;
+
+                    if (time_in_sec > time_fish3) {
+
+                        let fish3_trans = model_transform.times(Mat4.translation(-5, 10, 11))
+                                                      .times(Mat4.scale(0.8,0.6,0.5,1));
+                        this.shapes.peashooter.draw(context, program_state, fish3_trans, this.materials.peashooter);
+                    }
+
+                    const time_fish4 = 6;
+
+                    if (time_in_sec > time_fish4) {
+
+                        let fish4_trans = model_transform.times(Mat4.translation(0, 10, 11))
+                                                      .times(Mat4.scale(0.8,0.6,0.5,1));
+                        this.shapes.peashooter.draw(context, program_state, fish4_trans, this.materials.peashooter);
+                    }
+
+                    const time_fish5 = 7;
+
+                    if (time_in_sec > time_fish5) {
+                        let fish5_trans = model_transform.times(Mat4.translation(5.0, 10, 11))
+                                                     .times(Mat4.scale(0.8,0.6,0.5,1));
+
+                        this.shapes.peashooter.draw(context, program_state, fish5_trans, this.materials.peashooter);
+                    }
+                } // end of loading screen
+        */
+        //this.loading_sound.play();
         if(this.change_view){
             program_state.set_camera(this.initial_camera_location);
             this.change_view = false;
@@ -718,7 +812,7 @@ export class Plantbie extends Scene {
         program_state.projection_transform = Mat4.perspective(
             Math.PI / 4, context.width / context.height, .1, 1000);
 
-        const t = program_state.animation_time / 1000;
+        //const t = program_state.animation_time / 1000;
 
         // Define the light for the scene
         const light_position = vec4(0, 10, 10, 1);
@@ -802,6 +896,8 @@ export class Plantbie extends Scene {
             .times(Mat4.scale(80, 80, 80))
             .times(Mat4.rotation(Math.PI / 2, 1, 0, 0));
         this.shapes.ground.draw(context, program_state, ground_placement, this.materials.ground);
+
+        //this.draw_menu_bar(context, program_state, model_transform, t / 1000);
 /*        // Draw the peashooters in the plant array
         for (const plant of this.plants) {
             let plant_transform = Mat4.identity()
