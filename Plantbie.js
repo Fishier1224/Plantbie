@@ -94,6 +94,16 @@ export class Plantbie extends Scene {
             cloud: new Shape_From_File("./assets/cloud.obj"),
             sky: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(4),
             ground: new defs.Square(),
+            peashooter_hair: new Shape_From_File("./assets/peashooter_hair.obj"),
+            peashooter_neck: new Shape_From_File("./assets/peashooter_neck_2.obj"),
+            peashooter_leaf: new Shape_From_File("./assets/melon_leaf.obj"), //turns out melon leaf is better rendered than peashooter leaf
+            peashooter_head: new Shape_From_File("./assets/peashooter_head_2.obj"),
+            watermelon_leaf: new Shape_From_File("./assets/melon_leaf.obj"),
+            watermelon_bullet_holder: new Shape_From_File("./assets/melon_bullet_holder_3.obj"),
+            watermelon_neck: new Shape_From_File("./assets/melon_neck.obj"),
+            watermelon_bullet: new Shape_From_File("./assets/melon_bullet.obj"),
+            watermelon_head: new Shape_From_File("./assets/melon_head.obj"),
+            watermelon_eyes: new Shape_From_File("./assets/melon_eye.obj"),
             //cloud: new Cloud(),
             //outlined_square: new Outlined_Square(),
         };
@@ -151,6 +161,12 @@ export class Plantbie extends Scene {
                 specularity: 0.05,
                 color: hex_color("#666666")
             }),
+            melon_eye: new Material(new defs.Phong_Shader(), {
+                ambient: 0.67,
+                diffusivity: 0.5,
+                specularity: 0.05,
+                color: hex_color("#000000")
+            }),
             //{ambient: 1, diffusivity: .9, specularity: 1, color: hex_color("#000000")
             /*
             cloud: new Material(new defs.Textured_Phong(), {
@@ -182,6 +198,50 @@ export class Plantbie extends Scene {
                 this.grid_positions.push([j * size, 0, i * size]);
             }
         }
+    }
+
+        render_peashooter(context,program_state,x,y,z,t){
+            let plant_transform = Mat4.identity().times(Mat4.translation(x,y,z),);
+            plant_transform = plant_transform.times(Mat4.scale(0.35,0.35,0.35));
+            const leaf_flex = Math.sin(2 * Math.PI * t) * 0.1; // Adjust frequency and amplitude as needed
+            let leaf_transform = plant_transform.times(Mat4.translation(0,leaf_flex,0));
+            this.shapes.peashooter_leaf.draw(context, program_state, leaf_transform, this.materials.peashooter);
+            plant_transform = plant_transform.times(Mat4.translation(0, 1.5, -1));
+            const neck_flex = Math.sin(2 * Math.PI * t) * 0.05; // Adjust frequency and amplitude as needed
+            plant_transform = plant_transform.times(Mat4.rotation(neck_flex,1,0,0));
+            this.shapes.peashooter_neck.draw(context, program_state, plant_transform, this.materials.peashooter);
+            plant_transform = plant_transform.times(Mat4.translation(0, 2, 0));
+            const head_bob = Math.sin(2*Math.PI * t) * 0.1; // Adjust frequency and amplitude as needed
+            plant_transform = plant_transform.times(Mat4.translation(0, head_bob, 2*head_bob));
+            this.shapes.peashooter_head.draw(context, program_state, plant_transform, this.materials.peashooter);
+            plant_transform = plant_transform.times(Mat4.translation(-0.5, 0.25, -2.75));
+            this.shapes.peashooter_hair.draw(context, program_state, plant_transform, this.materials.peashooter);
+    }
+
+    render_watermelon(context,program_state,x,y,z,t){
+        let plant_transform = Mat4.identity().times(Mat4.translation(x,y,z),);
+        plant_transform = plant_transform.times(Mat4.scale(0.45,0.4,0.4));
+        const leaf_flex = Math.sin(2 * Math.PI * t) * 0.1; // Adjust frequency and amplitude as needed
+        let leaf_transform = plant_transform.times(Mat4.translation(0,leaf_flex,0));
+        this.shapes.watermelon_leaf.draw(context, program_state, leaf_transform, this.materials.peashooter);
+        plant_transform=leaf_transform.times(Mat4.translation(0,1,0),);
+        this.shapes.watermelon_head.draw(context,program_state,plant_transform, this.materials.peashooter);
+        let eye_transform=leaf_transform.times(Mat4.translation(0.2,1,1.3),);
+        eye_transform = eye_transform.times(Mat4.scale(0.4,0.4,0.4));
+       this.shapes.watermelon_eyes.draw(context,program_state,eye_transform, this.materials.melon_eye);
+        plant_transform=plant_transform.times(Mat4.translation(-0.5,1.3,-1.5),);
+        const rot_factor = Math.sin(2*Math.PI*t)*0.1;
+        plant_transform = plant_transform.times(Mat4.rotation(rot_factor, 1,0,0));
+        let neck_transform = plant_transform.times(Mat4.rotation(Math.PI,0,1,0),);
+        neck_transform = neck_transform.times(Mat4.scale(0.7,0.7,0.7),);
+        this.shapes.watermelon_neck.draw(context,program_state,neck_transform, this.materials.peashooter);
+        const rot_factor_2 = Math.sin(2*Math.PI*t)*0.1;
+        plant_transform = plant_transform.times(Mat4.rotation(rot_factor_2, 1,0,0));
+        plant_transform = plant_transform.times(Mat4.translation(-0.6,1,-1),);
+        this.shapes.watermelon_bullet_holder.draw(context, program_state, plant_transform, this.materials.peashooter);
+        let bullet_transform = plant_transform.times(Mat4.rotation(Math.PI,0,1,0),);
+        bullet_transform = bullet_transform.times(Mat4.translation(0,1,-0.3),).times(Mat4.scale(1.2,1.2,1.2));
+        this.shapes.watermelon_bullet.draw(context,program_state,bullet_transform, this.materials.peashooter);
     }
 
     render_scene(context, program_state, shadow_pass, draw_light_source = false, draw_shadow = false) {
@@ -644,7 +704,10 @@ export class Plantbie extends Scene {
 
         let plant_transform = Mat4.identity()
                 .times(Mat4.translation(0, 1, 0));
-        this.shapes.peashooter.draw(context, program_state, plant_transform, this.materials.peashooter);
+        // this.shapes.peashooter.draw(context, program_state, plant_transform, this.materials.peashooter);
+
+        this.render_peashooter(context,program_state,0,0.05,0,t);
+        this.render_watermelon(context,program_state,-2,0.05,-2,t);
 
         const ind = this.grid_index[0] * 9 + this.grid_index[1];
         for (let i=0; i<this.grid_positions.length; i++) {
