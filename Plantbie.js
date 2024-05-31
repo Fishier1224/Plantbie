@@ -222,6 +222,7 @@ export class Plantbie extends Scene {
         this.grid_positions = [];
         this.change_view = false;
         this.create_grid();
+        this.plant_here = new Array(45).fill(0);
     }
 
     create_grid() {
@@ -237,26 +238,49 @@ export class Plantbie extends Scene {
     }
 
         render_peashooter(context,program_state,x,y,z,t){
-            let plant_transform = Mat4.identity().times(Mat4.translation(x,y,z),);
+            let plant_transform = Mat4.identity()
+                .times(Mat4.translation(x,y,z),);
             plant_transform = plant_transform.times(Mat4.scale(0.35,0.35,0.35));
+
+            plant_transform = plant_transform.times(Mat4.rotation(Math.PI / 2, 0, 1, 0));
+
+
             const leaf_flex = Math.sin(2 * Math.PI * t) * 0.1; // Adjust frequency and amplitude as needed
             let leaf_transform = plant_transform.times(Mat4.translation(0,leaf_flex,0));
+
+            // leaf_transform = leaf_transform.times(Mat4.rotation(Math.PI / 2, 0, 1, 0));
             this.shapes.peashooter_leaf.draw(context, program_state, leaf_transform, this.materials.peashooter);
+            // leaf_transform = leaf_transform.times(Mat4.rotation(-1 * Math.PI / 2,0,1,0));
+
             plant_transform = plant_transform.times(Mat4.translation(0, 1.5, -1));
             const neck_flex = Math.sin(2 * Math.PI * t) * 0.05; // Adjust frequency and amplitude as needed
             plant_transform = plant_transform.times(Mat4.rotation(neck_flex,1,0,0));
+
+            // plant_transform = plant_transform.times(Mat4.rotation(Math.PI / 2,0,1,0));
             this.shapes.peashooter_neck.draw(context, program_state, plant_transform, this.materials.peashooter);
+            // plant_transform = plant_transform.times(Mat4.rotation(-1 * Math.PI / 2,0,1,0));
+
             plant_transform = plant_transform.times(Mat4.translation(0, 2, 0));
             const head_bob = Math.sin(2*Math.PI * t) * 0.1; // Adjust frequency and amplitude as needed
             plant_transform = plant_transform.times(Mat4.translation(0, head_bob, 2*head_bob));
+
+            // plant_transform = plant_transform.times(Mat4.rotation(Math.PI / 2,0,1,0));
             this.shapes.peashooter_head.draw(context, program_state, plant_transform, this.materials.peashooter);
+            // plant_transform = plant_transform.times(Mat4.rotation(-1 * Math.PI / 2,0,1,0));
+
             plant_transform = plant_transform.times(Mat4.translation(-0.5, 0.25, -2.75));
+
+            // plant_transform = plant_transform.times(Mat4.rotation(Math.PI / 2,0,1,0));
             this.shapes.peashooter_hair.draw(context, program_state, plant_transform, this.materials.peashooter);
+            // plant_transform = plant_transform.times(Mat4.rotation(-1 * Math.PI / 2,0,1,0));
     }
 
     render_watermelon(context,program_state,x,y,z,t){
-        let plant_transform = Mat4.identity().times(Mat4.translation(x,y,z),);
+        let plant_transform = Mat4.identity()
+            .times(Mat4.translation(x,y,z),);
+
         plant_transform = plant_transform.times(Mat4.scale(0.45,0.4,0.4));
+        plant_transform = plant_transform.times(Mat4.rotation(Math.PI / 2, 0, 1, 0));
         const leaf_flex = Math.sin(2 * Math.PI * t) * 0.1; // Adjust frequency and amplitude as needed
         let leaf_transform = plant_transform.times(Mat4.translation(0,leaf_flex,0));
         this.shapes.watermelon_leaf.draw(context, program_state, leaf_transform, this.materials.peashooter);
@@ -320,7 +344,12 @@ export class Plantbie extends Scene {
         this.key_triggered_button("Prev Plant", ["ArrowLeft"], () => this.buffer_index = Math.min(0, this.buffer_index-1));
         this.key_triggered_button("Prev Plant", ["ArrowRight"], () => this.buffer_index = Math.min(0, this.buffer_index+1));
         this.new_line();
-        this.key_triggered_button("Plant", ["Enter"], () => this.grass_grid.set(this.grid_index, this.current_planet));// need to insert into array of plants;
+        this.key_triggered_button("Plant", ["Enter"], () => {
+            let temp = this.grid_index[0] * 9 + this.grid_index[1];
+            this.plant_here[temp] = 1; // here we should change the value to same as the buffer, which will have a int value to represent the type of plant stored in this buffer.
+            // for now, 1 stands for peashooters.
+            }
+        );// need to insert into array of plants;
         this.key_triggered_button("Remove Plant", ["Escape"], () => this.grass_grid.set(this.grid_index, this.current_empty));// need to remove from array of plants
         this.new_line();
         this.key_triggered_button("Rotate View Left", ["a"], () =>
@@ -815,7 +844,7 @@ export class Plantbie extends Scene {
         //const t = program_state.animation_time / 1000;
 
         // Define the light for the scene
-        const light_position = vec4(0, 10, 10, 1);
+        const light_position = vec4(10, 7, -2, 1);
         program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
 
         let plant_transform = Mat4.identity()
@@ -832,6 +861,12 @@ export class Plantbie extends Scene {
                 .times(Mat4.translation(pos[0] - 8, pos[1], pos[2] - 4))
                 .times(Mat4.scale(1.36, 1.36, 1.36));
 
+            if(this.plant_here[i] !== 0){
+                if(this.plant_here[i] === 1){
+
+                    this.render_peashooter(context, program_state, pos[0]-8, pos[1] + 0.05, pos[2]-4, t);
+                }
+            }
             // Draw the inner square
             if(i === ind){
                 this.materials.square.color = this.select_color;
