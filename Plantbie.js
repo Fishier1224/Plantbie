@@ -94,7 +94,7 @@ export class Plantbie extends Scene {
             peashooter: new Shape_From_File("./assets/peashooter.obj"),
             square: new Square(),
             sun: new Shape_From_File("./assets/sphere.obj"),
-            vertical_rectangle: new VerticalRectangle(),
+            // vertical_rectangle: new VerticalRectangle(),
             cloud: new Shape_From_File("./assets/cloud.obj"),
             sky: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(4),
             ground: new defs.Square(),
@@ -110,6 +110,7 @@ export class Plantbie extends Scene {
             watermelon_head: new Shape_From_File("./assets/melon_head.obj"),
             watermelon_eyes: new Shape_From_File("./assets/melon_eye.obj"),
             text: new Text_Line(35),
+            pea: new defs.Subdivision_Sphere(4),
             //cloud: new Cloud(),
             //outlined_square: new Outlined_Square(),
         };
@@ -173,13 +174,13 @@ export class Plantbie extends Scene {
                 specularity: 1,
                 color: hex_color("#000000")
             }),
-            vertical_rectangle: new Material(textured, {
-                color: hex_color("#87CEEB"),
-                ambient: 1,
-                diffusivity: 0.9,
-                specularity: 1,
-                texture: new Texture("assets/sky-gradient.jpg")
-            }),
+            // vertical_rectangle: new Material(textured, {
+            //     color: hex_color("#87CEEB"),
+            //     ambient: 1,
+            //     diffusivity: 0.9,
+            //     specularity: 1,
+            //     texture: new Texture("assets/sky-gradient.jpg")
+            // }),
             sky: new Material(new defs.Phong_Shader(), {
                 ambient: 0.9,
                 diffusivity: 0.1,
@@ -201,7 +202,14 @@ export class Plantbie extends Scene {
             black: new Material(new defs.Phong_Shader(), {
                 ambient: 0.4,
                 diffusivity: 0.6,
-                color: hex_color("#000000")}),
+                color: hex_color("#000000")
+            }),
+            pea: new Material(new defs.Phong_Shader(), {
+                ambient: 0.4,
+                diffusivity: 0.6,
+                specularity: 0.05,
+                color: hex_color("#0AFF0A")
+            }),
             //{ambient: 1, diffusivity: .9, specularity: 1, color: hex_color("#000000")
             /*
             cloud: new Material(new defs.Textured_Phong(), {
@@ -223,6 +231,9 @@ export class Plantbie extends Scene {
         this.change_view = false;
         this.create_grid();
         this.plant_here = new Array(45).fill(0);
+        this.cool_down = new Array(45).fill(-1);
+
+        this.peas = []
     }
 
     create_grid() {
@@ -237,42 +248,53 @@ export class Plantbie extends Scene {
         }
     }
 
-        render_peashooter(context,program_state,x,y,z,t){
-            let plant_transform = Mat4.identity()
-                .times(Mat4.translation(x,y,z),);
-            plant_transform = plant_transform.times(Mat4.scale(0.35,0.35,0.35));
+    render_pea(context, program_state, x, y, z){
 
-            plant_transform = plant_transform.times(Mat4.rotation(Math.PI / 2, 0, 1, 0));
+        // this.peas.append({grid, t});
+        let pea_transform = Mat4.identity().times(Mat4.translation(x+0.2, y+1.13, z-0.1),);
+        pea_transform = pea_transform.times(Mat4.scale(0.25, 0.25, 0.25));
 
 
-            const leaf_flex = Math.sin(2 * Math.PI * t) * 0.1; // Adjust frequency and amplitude as needed
-            let leaf_transform = plant_transform.times(Mat4.translation(0,leaf_flex,0));
+        this.shapes.pea.draw(context, program_state, pea_transform, this.materials.pea);
+    }
 
-            // leaf_transform = leaf_transform.times(Mat4.rotation(Math.PI / 2, 0, 1, 0));
-            this.shapes.peashooter_leaf.draw(context, program_state, leaf_transform, this.materials.peashooter);
-            // leaf_transform = leaf_transform.times(Mat4.rotation(-1 * Math.PI / 2,0,1,0));
 
-            plant_transform = plant_transform.times(Mat4.translation(0, 1.5, -1));
-            const neck_flex = Math.sin(2 * Math.PI * t) * 0.05; // Adjust frequency and amplitude as needed
-            plant_transform = plant_transform.times(Mat4.rotation(neck_flex,1,0,0));
+    render_peashooter(context,program_state,x,y,z,t){
+        let plant_transform = Mat4.identity()
+            .times(Mat4.translation(x-8,y+0.05,z-4),);
+        plant_transform = plant_transform.times(Mat4.scale(0.35,0.35,0.35));
 
-            // plant_transform = plant_transform.times(Mat4.rotation(Math.PI / 2,0,1,0));
-            this.shapes.peashooter_neck.draw(context, program_state, plant_transform, this.materials.peashooter);
-            // plant_transform = plant_transform.times(Mat4.rotation(-1 * Math.PI / 2,0,1,0));
+        plant_transform = plant_transform.times(Mat4.rotation(Math.PI / 2, 0, 1, 0));
 
-            plant_transform = plant_transform.times(Mat4.translation(0, 2, 0));
-            const head_bob = Math.sin(2*Math.PI * t) * 0.1; // Adjust frequency and amplitude as needed
-            plant_transform = plant_transform.times(Mat4.translation(0, head_bob, 2*head_bob));
 
-            // plant_transform = plant_transform.times(Mat4.rotation(Math.PI / 2,0,1,0));
-            this.shapes.peashooter_head.draw(context, program_state, plant_transform, this.materials.peashooter);
-            // plant_transform = plant_transform.times(Mat4.rotation(-1 * Math.PI / 2,0,1,0));
+        const leaf_flex = Math.sin(2 * Math.PI * t) * 0.1; // Adjust frequency and amplitude as needed
+        let leaf_transform = plant_transform.times(Mat4.translation(0,leaf_flex,0));
 
-            plant_transform = plant_transform.times(Mat4.translation(-0.5, 0.25, -2.75));
+        // leaf_transform = leaf_transform.times(Mat4.rotation(Math.PI / 2, 0, 1, 0));
+        this.shapes.peashooter_leaf.draw(context, program_state, leaf_transform, this.materials.peashooter);
+        // leaf_transform = leaf_transform.times(Mat4.rotation(-1 * Math.PI / 2,0,1,0));
 
-            // plant_transform = plant_transform.times(Mat4.rotation(Math.PI / 2,0,1,0));
-            this.shapes.peashooter_hair.draw(context, program_state, plant_transform, this.materials.peashooter);
-            // plant_transform = plant_transform.times(Mat4.rotation(-1 * Math.PI / 2,0,1,0));
+        plant_transform = plant_transform.times(Mat4.translation(0, 1.5, -1));
+        const neck_flex = Math.sin(2 * Math.PI * t) * 0.05; // Adjust frequency and amplitude as needed
+        plant_transform = plant_transform.times(Mat4.rotation(neck_flex,1,0,0));
+
+        // plant_transform = plant_transform.times(Mat4.rotation(Math.PI / 2,0,1,0));
+        this.shapes.peashooter_neck.draw(context, program_state, plant_transform, this.materials.peashooter);
+        // plant_transform = plant_transform.times(Mat4.rotation(-1 * Math.PI / 2,0,1,0));
+
+        plant_transform = plant_transform.times(Mat4.translation(0, 2, 0));
+        const head_bob = Math.sin(2*Math.PI * t) * 0.1; // Adjust frequency and amplitude as needed
+        plant_transform = plant_transform.times(Mat4.translation(0, head_bob, 2*head_bob));
+
+        // plant_transform = plant_transform.times(Mat4.rotation(Math.PI / 2,0,1,0));
+        this.shapes.peashooter_head.draw(context, program_state, plant_transform, this.materials.peashooter);
+        // plant_transform = plant_transform.times(Mat4.rotation(-1 * Math.PI / 2,0,1,0));
+
+        plant_transform = plant_transform.times(Mat4.translation(-0.5, 0.25, -2.75));
+
+        // plant_transform = plant_transform.times(Mat4.rotation(Math.PI / 2,0,1,0));
+        this.shapes.peashooter_hair.draw(context, program_state, plant_transform, this.materials.peashooter);
+        // plant_transform = plant_transform.times(Mat4.rotation(-1 * Math.PI / 2,0,1,0));
     }
 
     render_watermelon(context,program_state,x,y,z,t){
@@ -348,6 +370,7 @@ export class Plantbie extends Scene {
             let temp = this.grid_index[0] * 9 + this.grid_index[1];
             this.plant_here[temp] = 1; // here we should change the value to same as the buffer, which will have a int value to represent the type of plant stored in this buffer.
             // for now, 1 stands for peashooters.
+            this.cool_down[temp] = 0;
             }
         );// need to insert into array of plants;
         this.key_triggered_button("Remove Plant", ["Escape"], () => this.grass_grid.set(this.grid_index, this.current_empty));// need to remove from array of plants
@@ -764,10 +787,11 @@ export class Plantbie extends Scene {
         // display():  Called once per frame of animation.
         // Setup -- This part sets up the scene's overall camera matrix, projection matrix, and lights:
         const t = program_state.animation_time / 1000;
-            const time_in_sec = t;
-            const time_loading_screen = 0;
-            const time_loading_screen_end = 9;
-            this.game_sound.play();
+        const time_in_sec = t;
+        const time_loading_screen = 0;
+        const time_loading_screen_end = 9;
+        this.game_sound.play();
+
             //let loading_transform = Mat4.identity().times(Mat4.translation(-7.5,13,11,0)).times(Mat4.scale(1.2,1.2,0.2,5));
             //this.shapes.text.set_string("loading...", context.context);
             //this.shapes.text.draw(context, program_state, loading_transform.times(Mat4.scale(.35, .35, .50)), this.materials.text_image);
@@ -851,8 +875,16 @@ export class Plantbie extends Scene {
                 .times(Mat4.translation(0, 1, 0));
         // this.shapes.peashooter.draw(context, program_state, plant_transform, this.materials.peashooter);
 
-        this.render_peashooter(context,program_state,0,0.05,0,t);
-        this.render_watermelon(context,program_state,-2,0.05,-2,t);
+        // this.render_peashooter(context,program_state,0,0.05,0,t);
+        // this.render_watermelon(context,program_state,-2,0.05,-2,t);
+
+        // this.render_pea(context,program_state,0.2,1.13,-0.1,t);
+
+        for(let i=0; i<this.cool_down.length; i++){
+            if(this.cool_down[i] === 0){
+                this.cool_down[i] = t;
+            }
+        }
 
         const ind = this.grid_index[0] * 9 + this.grid_index[1];
         for (let i=0; i<this.grid_positions.length; i++) {
@@ -863,8 +895,17 @@ export class Plantbie extends Scene {
 
             if(this.plant_here[i] !== 0){
                 if(this.plant_here[i] === 1){
-
-                    this.render_peashooter(context, program_state, pos[0]-8, pos[1] + 0.05, pos[2]-4, t);
+                    this.render_peashooter(context, program_state, pos[0], pos[1], pos[2], t);
+                    // console.log(i);
+                    // console.log(this.cool_down);
+                    // console.log(t);
+                    if((t - this.cool_down[i]) > 0 && (t - this.cool_down[i]) < 0.1){
+                        this.peas.push([i, t]);
+                        this.cool_down[i] = t + 2.5;
+                        // console.log(t);
+                        // console.log(this.cool_down[i]);
+                        // console.log(this.peas);
+                    }
                 }
             }
             // Draw the inner square
@@ -872,8 +913,6 @@ export class Plantbie extends Scene {
                 this.materials.square.color = this.select_color;
                 this.shapes.square.draw(context, program_state, square_transform, this.materials.square.override({color:hex_color("FFFF00")}));
                 this.materials.square.color = this.normal_color;
-                console.log(i);
-                console.log("ni"+ind);
             }
             else{
                 this.shapes.square.draw(context, program_state, square_transform, this.materials.square.override({color:hex_color("006400")}));
@@ -882,6 +921,14 @@ export class Plantbie extends Scene {
             // Draw the outline
             let outline_transform = square_transform.times(Mat4.scale(1.3, 1.3, 1.3)); // Slightly larger for outline
             this.shapes.square.draw(context, program_state, outline_transform, this.materials.outlined_square);
+        }
+
+        for(let i=0; i<this.peas.length; i++){
+            let ind = this.peas[i][0];
+            let st = this.peas[i][1];
+            let pos = this.grid_positions[ind];
+            let dt = (t - st);
+            this.render_pea(context, program_state, pos[0]+ dt * 2.5 - 8, pos[1], pos[2] - 4);
         }
 
         // Position the sun
