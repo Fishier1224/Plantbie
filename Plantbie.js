@@ -923,13 +923,15 @@ export class Plantbie extends Scene {
             this.shapes.square.draw(context, program_state, outline_transform, this.materials.outlined_square);
         }
 
-        for(let i=0; i<this.peas.length; i++){
+        for(let i=0; i<this.peas.length; i++) {
             let ind = this.peas[i][0];
             let st = this.peas[i][1];
             let pos = this.grid_positions[ind];
             let dt = (t - st);
-            if(dt < 8) {
+            if (dt < 8) {
                 this.render_pea(context, program_state, pos[0] + dt * 2.5 - 8, pos[1], pos[2] - 4);
+            } else {
+                this.peas.splice(i, 1);
             }
         }
 
