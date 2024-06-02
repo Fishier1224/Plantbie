@@ -928,7 +928,9 @@ export class Plantbie extends Scene {
             let st = this.peas[i][1];
             let pos = this.grid_positions[ind];
             let dt = (t - st);
-            this.render_pea(context, program_state, pos[0]+ dt * 2.5 - 8, pos[1], pos[2] - 4);
+            if(dt < 8) {
+                this.render_pea(context, program_state, pos[0] + dt * 2.5 - 8, pos[1], pos[2] - 4);
+            }
         }
 
         // Position the sun
