@@ -234,7 +234,7 @@ export class Plantbie extends Scene {
         }
         this.starting = false;
         this.grid_index = [0, 0];
-        this.buffer_index = 1;
+        this.buffer_index = 0;
         this.current_planet = "default"
         this.current_empty = "empty"
         const grass_grid = new Map();
@@ -989,14 +989,14 @@ export class Plantbie extends Scene {
         let normal_material = this.materials.buffer;
         let highlight_material = this.materials.buffer_highlight;
         let base_transform = Mat4.identity()
-            .times(Mat4.translation(-4, 4, -5)) // Adjust the position in the scene
+            .times(Mat4.translation(-13, 4, -5)) // Adjust the position in the scene
             .times(Mat4.rotation(Math.PI / 2, 0, 1, 0)) // Rotate to make it vertical
             .times(Mat4.scale(2, 2, 2)); // Scale to make it a small square
 
         // Draw four small squares lined up from left to right
-        for (let i = 0; i < 3; i++) {
+        for (let i = 0; i < 10; i++) {
             let model_transform = base_transform
-                .times(Mat4.translation(2, 0, 2 * i)); // Adjust spacing (2 units apart in this case)
+                .times(Mat4.translation(2, 0, 2 + i)); // Adjust spacing (2 units apart in this case)
             // Choose the material based on this.pos
             let material = (this.buffer_index === i) ? highlight_material : normal_material;
             this.shapes.buffer.draw(context, program_state, model_transform, material);
