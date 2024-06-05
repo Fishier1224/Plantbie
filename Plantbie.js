@@ -293,7 +293,10 @@ export class Plantbie extends Scene {
         this.cool_down = new Array(45).fill(-1);
 
         this.peas = []
-        this.buf_plants = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
+        this.buf_plants = [1,0,0,0,0,0,0,0,0,0];
+        this.zombie = []
+        this.plant_count_down = Math.floor(Math.random() * 5) + 10
+        this.zombie_count_down = Math.floor(Math.random() * 5) + 8
     }
 
     create_grid() {
@@ -528,9 +531,13 @@ export class Plantbie extends Scene {
         this.new_line();
         this.key_triggered_button("Plant", ["Enter"], () => {
                 let temp = this.grid_index[0] * 9 + this.grid_index[1];
-                if(this.plant_here[temp]===0) {
-                    this.plant_here[temp] = 1; // here we should change the value to same as the buffer, which will have a int value to represent the type of plant stored in this buffer.
+                if(this.plant_here[temp]===0 && this.buf_plants[this.buffer_index] !== 0) {
+                    this.plant_here[temp] = this.buf_plants[this.buffer_index]; // here we should change the value to same as the buffer, which will have a int value to represent the type of plant stored in this buffer.
                     // for now, 1 stands for peashooters.
+                    for(let i = this.buffer_index; i < this.buf_plants.length-1; i++) {
+                        this.buf_plants[i] = this.buf_plants[i+1];
+                    }
+                    this.buf_plants[this.buf_plants.length-1] = 0;
                     this.cool_down[temp] = 0;
                 }
             }
@@ -563,7 +570,27 @@ export class Plantbie extends Scene {
         const time_loading_screen_end = 9;
         this.game_sound.play();
 
+        if(this.game_end === true){
+            console.log("game end!")
+        }
 
+        const types = ["flag", "bucket", "conehead"]
+        if(t >= this.zombie_count_down){
+            let row = Math.floor(Math.random()*5)+1
+            let ty = Math.floor(Math.random() * 3)
+            let curZombie = new Zombie(10,0,row,t,types[ty]);
+            this.zombies.push(curZombie);
+            this.zombie_count_down = t + Math.floor(Math.random() * 6) + 2
+        }
+        if(t >= this.plant_count_down){
+            for(let i =0; i < this.buf_plants.length; i++){
+                if(this.buf_plants[i] === 0){
+                    this.buf_plants[i] = Math.floor(Math.random() * 3) + 1;
+                    break;
+                }
+            }
+            this.plant_count_down = t + Math.floor(Math.random() * 5) + 5
+        }
         //this.loading_sound.play();
         if(this.change_view){
             program_state.set_camera(this.initial_camera_location);
@@ -589,8 +616,8 @@ export class Plantbie extends Scene {
 
         //-------- rendering zombies
         //Note that to render at coordinate "row 3 column 5", you need to instantiate z=3, x=5. The base coordinate is automatically converted.
-        if (!this.test) {       //this is the random generator logic - here we manually render a zombie centered at (8,0.05,4). Note that we must follow the exact format to push in a zombie object
-            let curZombie = new Zombie(5,0,3,t,"flag");
+        if (!this.test && t >= 5) {       //this is the random generator logic - here we manually render a zombie centered at (8,0.05,4). Note that we must follow the exact format to push in a zombie object
+            let curZombie = new Zombie(10,0,3,t,"flag");
             this.zombies.push(curZombie);
             this.test = true;
         }
@@ -649,11 +676,25 @@ export class Plantbie extends Scene {
 
             if(this.plant_here[i] !== 0){
                 if(this.plant_here[i] === 1){
-                    this.render_watermelon(context, program_state, pos[0], pos[1], pos[2], t);
+                    this.render_peashooter(context, program_state, pos[0], pos[1], pos[2], t);
                     if((t - this.cool_down[i]) > 0 && (t - this.cool_down[i]) < 0.1){
                         this.peas.push([i, t]);
                         this.cool_down[i] = t + 2.5;
 
+                    }
+                }
+                else if(this.plant_here[i] === 2){
+                    this.render_watermelon(context, program_state, pos[0], pos[1], pos[2], t);
+                    if((t - this.cool_down[i]) > 0 && (t - this.cool_down[i]) < 0.1){
+                        this.peas.push([i, t]);
+                        this.cool_down[i] = t + 2.5;
+                    }
+                }
+                else if(this.plant_here[i] === 3){
+                    this.render_watermelon(context, program_state, pos[0], pos[1], pos[2], t); // change to render wallnut
+                    if((t - this.cool_down[i]) > 0 && (t - this.cool_down[i]) < 0.1){
+                        this.peas.push([i, t]);
+                        this.cool_down[i] = t + 2.5;
                     }
                 }
             }
@@ -714,12 +755,14 @@ export class Plantbie extends Scene {
         this.shapes.headstone.draw(context, program_state, headstone_transform, this.materials.headstone);
 
         let peashooter = "pea";
+        let watermelon = "melon";
+        let wallnut = "wall"
 
 
 
-        //0 - peashooter
-        //1 - watermelon
-        //2 - wallnut
+        //1 - peashooter
+        //2 - watermelon
+        //3 - wallnut
 
         let normal_material = this.materials.buffer;
         let highlight_material = this.materials.buffer_highlight;
@@ -742,13 +785,21 @@ export class Plantbie extends Scene {
             let model_transform = base_transform
                 .times(Mat4.translation(2, 0, 2 + i)) // Adjust spacing (2 units apart in this case)
                 .times(Mat4.scale(0.5, 0.5, 0.5))
-            if(this.buf_plants[i] === 1){
+            if(this.buf_plants[i] !== 0){
 
-                this.shapes.text.set_string(peashooter, context.context);
+                if(this.buf_plants[i] === 1){
+                    this.shapes.text.set_string(peashooter, context.context);
+                }
+                else if(this.buf_plants[i] === 2){
+                    this.shapes.text.set_string(watermelon, context.context);
+                }
+                else if(this.buf_plants[i] === 3){
+                    this.shapes.text.set_string(wallnut, context.context);
+                }
                 this.shapes.text.draw(context, program_state, model_transform
                     .times(Mat4.rotation(-1 * Math.PI / 2, 0, 1, 0))
                     .times(Mat4.translation(-0.5, 0, 1))
-                    .times(Mat4.scale(0.3, 0.3, 0.3)), this.materials.text_image);
+                    .times(Mat4.scale(0.25, 0.25, 0.25)), this.materials.text_image);
             }
         }
 
@@ -1020,16 +1071,16 @@ function collision_detection(bullet_cords, zombie_cords) {
     let points = [top_left, top_right, bot_left, bot_right];
     // console.log("bullet: " + bullet_cords);
     // console.log("zombie: " + zombie_cords);
-    console.log("bounding x " + rec[0][0] + " " + rec[1][0]);
-    console.log("bounding y " + rec[0][1] + " " + rec[1][1]);
-    console.log("bounding z " + rec[0][2] + " " + rec[1][2]);
+    // console.log("bounding x " + rec[0][0] + " " + rec[1][0]);
+    // console.log("bounding y " + rec[0][1] + " " + rec[1][1]);
+    // console.log("bounding z " + rec[0][2] + " " + rec[1][2]);
     for(let i=0; i < points.length; i++) {
         let point = points[i];
-        console.log("testing " + point);
+        // console.log("testing " + point);
         let temp1 = ((rec[0][0] <= point[0]) & (rec[1][0] >= point[0]));
         let temp2 = ((rec[0][1] >= point[1]) & (rec[1][1] <= point[1]));
         let temp3 = ((rec[0][2] >= point[2]) & (rec[1][2] <= point[2]));
-        console.log([temp1, temp2, temp3]);
+        // console.log([temp1, temp2, temp3]);
         if (temp1 && temp2 && temp3) {
             return true;
         }
