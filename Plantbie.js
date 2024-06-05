@@ -94,7 +94,7 @@ export class Plantbie extends Scene {
             peashooter: new Shape_From_File("./assets/peashooter.obj"),
             square: new Square(),
             sun: new Shape_From_File("./assets/sphere.obj"),
-            // vertical_rectangle: new VerticalRectangle(),
+            buffer: new VerticalRectangle(),
             cloud: new Shape_From_File("./assets/cloud.obj"),
             sky: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(4),
             ground: new defs.Square(),
@@ -176,13 +176,18 @@ export class Plantbie extends Scene {
                 specularity: 1,
                 color: hex_color("#000000")
             }),
-            // vertical_rectangle: new Material(textured, {
-            //     color: hex_color("#87CEEB"),
-            //     ambient: 1,
-            //     diffusivity: 0.9,
-            //     specularity: 1,
-            //     texture: new Texture("assets/sky-gradient.jpg")
-            // }),
+            buffer: new Material(new defs.Phong_Shader(), {
+                color: hex_color("#000000"),
+                ambient: 0.5,
+                diffusivity: 0.5,
+                specularity: 0.05,
+            }),
+            buffer_highlight: new Material(new defs.Phong_Shader(), {
+                color: hex_color("#FFD700"),
+                ambient: 0.5,
+                diffusivity: 0.5,
+                specularity: 0.05,
+            }),
             vertical_rectangle: new Material(textured, {
                 color: hex_color("#87CEEB"),
                 ambient: 1,
@@ -229,7 +234,7 @@ export class Plantbie extends Scene {
         }
         this.starting = false;
         this.grid_index = [0, 0];
-        this.buffer_index = 0;
+        this.buffer_index = 1;
         this.current_planet = "default"
         this.current_empty = "empty"
         const grass_grid = new Map();
@@ -371,8 +376,9 @@ export class Plantbie extends Scene {
         this.key_triggered_button("select column nine", ["o"], () => this.grid_index[1] = 8);
         this.new_line();
 
-        this.key_triggered_button("Prev Plant", ["ArrowLeft"], () => this.buffer_index = Math.min(0, this.buffer_index-1));
-        this.key_triggered_button("Prev Plant", ["ArrowRight"], () => this.buffer_index = Math.min(0, this.buffer_index+1));
+        this.key_triggered_button("Plant1", [","], () => this.buffer_index = 0);
+        this.key_triggered_button("Plant2", ["."], () => this.buffer_index = 1);
+        this.key_triggered_button("Plant3", ["/"], () => this.buffer_index = 2);
         this.new_line();
         this.key_triggered_button("Plant", ["Enter"], () => {
             let temp = this.grid_index[0] * 9 + this.grid_index[1];
@@ -976,12 +982,26 @@ export class Plantbie extends Scene {
         this.shapes.headstone.draw(context, program_state, headstone_transform, this.materials.headstone);
 
 
-        //const model_transform_vertical = model_transform.times(Mat4.rotation(Math.PI / 2, 1, 0, 0)).times(Mat4.translation(0, 0, -0.25)); // Adjust translation as needed
-        // let model_transform2 = Mat4.identity()
-        //     .times(Mat4.translation(0, 5, -5))
-        //     .times(Mat4.rotation(Math.PI / 2, 0, 1, 0))
-        //     .times(Mat4.scale(10, 10, 20));
-        // this.shapes.vertical_rectangle.draw(context, program_state, model_transform2, this.materials.vertical_rectangle);
+        //0 - peashooter
+        //1 - watermelon
+        //2 - wallnut
+
+        let normal_material = this.materials.buffer;
+        let highlight_material = this.materials.buffer_highlight;
+        let base_transform = Mat4.identity()
+            .times(Mat4.translation(-4, 4, -5)) // Adjust the position in the scene
+            .times(Mat4.rotation(Math.PI / 2, 0, 1, 0)) // Rotate to make it vertical
+            .times(Mat4.scale(2, 2, 2)); // Scale to make it a small square
+
+        // Draw four small squares lined up from left to right
+        for (let i = 0; i < 3; i++) {
+            let model_transform = base_transform
+                .times(Mat4.translation(2, 0, 2 * i)); // Adjust spacing (2 units apart in this case)
+            // Choose the material based on this.pos
+            let material = (this.buffer_index === i) ? highlight_material : normal_material;
+            this.shapes.buffer.draw(context, program_state, model_transform, material);
+        }
+
 
         // Position the clouds
         let cloud_transform = Mat4.identity()
