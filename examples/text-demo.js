@@ -1,7 +1,25 @@
 import {defs, tiny} from './common.js';
 // Pull these names into this module's scope for convenience:
-const {Vector, vec3, vec4, color, Mat4, Light, Shape, Material, Shader, Texture, Scene} = tiny;
+const {Vector, vec3, vec4, color, Mat4, hex_color, Light, Shape, Material, Shader, Texture, Scene} = tiny;
 
+class VerticalRectangle extends Shape {
+    constructor() {
+        super("position", "normal");
+        this.arrays.position = Vector3.cast(
+            [0, -0.5, -0.5], [0, 0.5, -0.5], [0, -0.5, 0.5],
+            [0, 0.5, -0.5], [0, 0.5, 0.5], [0, -0.5, 0.5]
+        );
+        this.arrays.normal = Vector3.cast(
+            [1, 0, 0], [1, 0, 0], [1, 0, 0],
+            [1, 0, 0], [1, 0, 0], [1, 0, 0]
+        );
+        this.arrays.texture_coord = Vector.cast(
+            [0, 0], [1, 0], [0, 1],
+            [1, 0], [1, 1], [0, 1]
+        );
+        this.indices = false;
+    }
+}
 export class Text_Line extends Shape {                           // **Text_Line** embeds text in the 3D world, using a crude texture
                                                                  // method.  This Shape is made of a horizontal arrangement of quads.
                                                                  // Each is textured over with images of ASCII characters, spelling
@@ -58,6 +76,13 @@ export class Text_Demo extends Scene {             // **Text_Demo** is a scene w
             color: color(.5, .5, .5, 1), ambient: 0,
             diffusivity: .3, specularity: .5, smoothness: 10
         })
+        const textured = new defs.Textured_Phong();
+        this.vertical_rectangle = new Material(textured, {
+            color: hex_color("#87CEEB"),
+            ambient: 1,
+            diffusivity: 0.9,
+            specularity: 1,
+        })
 
         // To show text you need a Material like this one:
         this.text_image = new Material(texture, {
@@ -74,14 +99,16 @@ export class Text_Demo extends Scene {             // **Text_Demo** is a scene w
 
         const t = program_state.animation_time / 1000;
         const funny_orbit = Mat4.rotation(Math.PI / 4 * t, Math.cos(t), Math.sin(t), .7 * Math.cos(t));
+        // const funny_orbit = Mat4.identity()
         this.shapes.cube.draw(context, program_state, funny_orbit, this.grey);
 
 
         let strings = ["This is some text", "More text", "1234567890", "This is a line.\n\n\n" + "This is another line.",
             Text_Line.toString(), Text_Line.toString()];
+        // console.log(strings)
 
         // Sample the "strings" array and draw them onto a cube.
-        for (let i = 0; i < 3; i++)
+        for (let i = 0; i < 3; i++){
             for (let j = 0; j < 2; j++) {             // Find the matrix for a basis located along one of the cube's sides:
                 let cube_side = Mat4.rotation(i == 0 ? Math.PI / 2 : 0, 1, 0, 0)
                     .times(Mat4.rotation(Math.PI * j - (i == 1 ? Math.PI / 2 : 0), 0, 1, 0))
@@ -97,5 +124,7 @@ export class Text_Demo extends Scene {             // **Text_Demo** is a scene w
                     cube_side.post_multiply(Mat4.translation(0, -.06, 0));
                 }
             }
+        }
+
     }
 }

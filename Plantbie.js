@@ -94,7 +94,7 @@ export class Plantbie extends Scene {
             peashooter: new Shape_From_File("./assets/peashooter.obj"),
             square: new Square(),
             sun: new Shape_From_File("./assets/sphere.obj"),
-            buffer: new VerticalRectangle(),
+            buffer: new defs.Cube(),
             cloud: new Shape_From_File("./assets/cloud.obj"),
             sky: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(4),
             ground: new defs.Square(),
@@ -109,24 +109,23 @@ export class Plantbie extends Scene {
             watermelon_bullet: new Shape_From_File("./assets/melon_bullet.obj"),
             watermelon_head: new Shape_From_File("./assets/melon_head.obj"),
             watermelon_eyes: new Shape_From_File("./assets/melon_eye.obj"),
-            text: new Text_Line(35),
+            text: new Text_Line(5),
             pea: new defs.Subdivision_Sphere(4),
 
-            test_rec: new VerticalRectangle(),
+
             //cloud: new Cloud(),
             //outlined_square: new Outlined_Square(),
         };
 
         const textured = new defs.Textured_Phong();
-
+        const texture = new defs.Textured_Phong(1);
         // *** Materials
         this.materials = {
             // menu
-            text_image: new Material(new defs.Textured_Phong(), {
-                ambient: 1,
-                diffusivity: 0,
-                specularity: 0,
-                texture: new Texture("./assets/text.png")}),
+            text_image: new Material(texture, {
+                ambient: 1, diffusivity: 0, specularity: 0,
+                texture: new Texture("assets/text.png")
+            }),
             menu: new Material(textured, {
                 ambient: 0.9,
                 diffusivity: .9,
@@ -247,6 +246,7 @@ export class Plantbie extends Scene {
         this.cool_down = new Array(45).fill(-1);
 
         this.peas = []
+        this.buf_plants = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
     }
 
     create_grid() {
@@ -339,20 +339,6 @@ export class Plantbie extends Scene {
         this.shapes.watermelon_bullet.draw(context,program_state,bullet_transform, this.materials.peashooter);
     }
 
-    render_scene(context, program_state, shadow_pass, draw_light_source = false, draw_shadow = false) {
-        // shadow_pass: true if this is the second pass that draw the shadow.
-        // draw_light_source: true if we want to draw the light source.
-        // draw_shadow: true if we want to draw the shadow
-        let model_transform = Mat4.identity();
-
-        this.lifes = 1;
-        const t = program_state.animation_time, dt = program_state.animation_delta_time / 1000;
-
-        if (this.lifes != 0) {
-            this.draw_menu_bar(context, program_state, model_transform, t / 1000);
-        }
-    }
-
 
 
     make_control_panel() {
@@ -376,9 +362,9 @@ export class Plantbie extends Scene {
         this.key_triggered_button("select column nine", ["o"], () => this.grid_index[1] = 8);
         this.new_line();
 
-        this.key_triggered_button("Plant1", [","], () => this.buffer_index = 0);
-        this.key_triggered_button("Plant2", ["."], () => this.buffer_index = 1);
-        this.key_triggered_button("Plant3", ["/"], () => this.buffer_index = 2);
+        this.key_triggered_button("Buffer Move Left", ["ArrowLeft"], () => this.buffer_index = Math.max(0, this.buffer_index - 1));
+        // this.key_triggered_button("Plant2", ["."], () => this.buffer_index = 1);
+        this.key_triggered_button("Buffer Move Right", ["ArrowRight"], () => this.buffer_index = Math.min(9, this.buffer_index + 1));
         this.new_line();
         this.key_triggered_button("Plant", ["Enter"], () => {
                 let temp = this.grid_index[0] * 9 + this.grid_index[1];
@@ -404,400 +390,6 @@ export class Plantbie extends Scene {
     }
 
 
-    mouse_draw_obj(context, program_state) {
-        // no button clicks? return
-        if (this.userdraw == "none"){
-            return;
-        }
-        // else, create object & push to item queue
-        else {
-            let obj_color = color(Math.random(), Math.random(), Math.random(), 1.0);
-            let obj_scale = Math.random() * (3 - 1) + 1;
-            let negorpos = 1 - 2 * Math.round(Math.random());
-            let obj_rot = negorpos * Math.random() * (4 - 2) + 2;
-
-            // since aquarium sphere is only so big --> set far z-axis to be closer/more forward
-            let z_coord = 0.97;
-
-            // if mouse click / object placement is on sand --> set far z-axis to more forward so object doesn't hide behind sand
-            if (this.mousey < -0.5)
-            {
-                z_coord = 0.95;
-            }
-
-            let pos_ndc_near = vec4(this.mousex, this.mousey, -1.0, 1.0);
-            let pos_ndc_far  = vec4(this.mousex, this.mousey, z_coord, 1.0);
-            let center_ndc_near = vec4(0.0, 0.0, -1.0, 1.0);
-            let P = program_state.projection_transform;
-            let V = program_state.camera_inverse;
-            let pos_world_near = Mat4.inverse(P.times(V)).times(pos_ndc_near);
-            let pos_world_far  = Mat4.inverse(P.times(V)).times(pos_ndc_far);
-            let center_world_near  = Mat4.inverse(P.times(V)).times(center_ndc_near);
-            pos_world_near.scale_by(1 / pos_world_near[3]);
-            pos_world_far.scale_by(1 / pos_world_far[3]);
-            center_world_near.scale_by(1 / center_world_near[3]);
-
-            // create object
-            let obj = {
-                pos: pos_world_far,
-                color: obj_color,
-                size: obj_scale,
-                negorpos: negorpos,
-                object: this.userdraw
-            }
-
-            // if user clicked on nest --> update nest count & push position to queue
-            // in order to hatch corresponding baby turtles at game over
-            if (this.userdraw == "nest"){
-                this.nest_count += 1;
-                let transform = Mat4.translation(pos_world_far[0], pos_world_far[1], pos_world_far[2])
-                    .times(Mat4.scale(obj_scale, obj_scale, obj_scale, 0));
-                this.nest_location.push(transform.times(Mat4.scale(0.6,0.6,0.6,0)));
-            }
-
-            this.userdraw = "none";
-
-            // update sand dollars & total spent amount
-            this.sand_dollars = this.sand_dollars - this.offset;
-            this.total_spent = this.total_spent + this.offset;
-            this.offset = 0;
-
-            // push object to queue
-            this.item_queue.push(obj);
-        }
-    }
-    draw_menu_bar(context, program_state, model_transform, t){
-        // draw menu platform at top of viewport (wood texture)
-        let menubar_trans = model_transform.times(Mat4.translation(-26.4, 21, 0, 0))
-            .times(Mat4.scale(50, 2, 0, 0))
-        this.shapes.square.draw(context, program_state, menubar_trans, this.materials.menu);
-
-        // draw item 1: floral coral
-        var item1_background_trans = model_transform.times(Mat4.translation(-23.5, 20.8, 0, 0))
-            .times(Mat4.scale(1.4, 1.4, .5, 0));
-
-        let item1_trans = item1_background_trans.times(Mat4.translation(0.5, -0.25, 2, 0))
-            .times(Mat4.scale(0.38, 0.38, 1, 0))
-            .times(Mat4.rotation(-43.7, 0, 0, 1));
-        this.shapes.coral1.draw(context, program_state, item1_trans, this.materials.coral.override({color:hex_color("#e691bc")}));
-
-        let item1_price_trans = model_transform.times(Mat4.translation(-26.1, 20.3, 1, 0))
-            .times(Mat4.scale(0.75, 0.75, 1, 0))
-        var price1 = 2;
-        this.shapes.text.set_string("$"+ price1.toString(), context.context);
-        this.shapes.text.draw(context, program_state, item1_price_trans, this.materials.text_image);
-
-        // get position of item 1 button
-        let button1x = ((item1_background_trans[0][3]) - (-5)) / 22.5;
-        let button1y = (item1_background_trans[1][3] - (10.5)) / 12;
-
-        // check if mouse click on item 1 button
-        if ((this.mousex < button1x + 0.1 && this.mousex > button1x - 0.1) && (this.mousey < button1y + 0.12 && this.mousey > button1y - 0.1) && (this.sand_dollars - price1 >= 0))
-        {
-            // if clicked --> animate item so that we know it is clicked
-            let click_animate = (t/6) % 0.08;
-            let animate_click_transform = item1_background_trans.times(Mat4.scale(1 + click_animate, 1 + click_animate, 1, 0));
-            this.shapes.sphere.draw(context, program_state, animate_click_transform, this.materials.menubuttons);
-
-            // draw item on next mouse click
-            this.userdraw = "coral1";
-            this.offset = price1;
-        }
-        else {
-            this.shapes.sphere.draw(context, program_state, item1_background_trans, this.materials.menubuttons);
-        }
-
-        // draw item 2: rock
-        let item2_background_trans = model_transform.times(Mat4.translation(-18.3, 20.8, 0, 0))
-            .times(Mat4.scale(1.4, 1.4, .5, 0))
-
-        let item2_trans = item2_background_trans.times(Mat4.translation(0.3, -0.25, 2, 0))
-            .times(Mat4.scale(0.65, 0.65, 1, 0));
-        this.shapes.rock.draw(context, program_state, item2_trans, this.materials.rock);
-
-        let item2_price_trans = model_transform.times(Mat4.translation(-21, 20.3, 1, 0))
-            .times(Mat4.scale(0.75, 0.75, 1, 0))
-        var price2 = 1;
-        this.shapes.text.set_string("$"+ price2.toString(), context.context);
-        this.shapes.text.draw(context, program_state, item2_price_trans, this.materials.text_image);
-
-
-        // get position of item 2 button
-        let button2x = ((item2_background_trans[0][3]) - (-5)) / 22.5;
-        let button2y = (item2_background_trans[1][3] - (10.5)) / 12;
-
-        // check if item 2 button is clicked
-        if ((this.mousex < button2x + 0.1 && this.mousex > button2x - 0.1) && (this.mousey < button2y + 0.12 && this.mousey > button2y - 0.1) && (this.sand_dollars - price2 >= 0))
-        {
-            var new_money = this.sand_dollars - price2;
-            // if clicked --> animate item so that we know it is clicked
-            let click_animate = (t/6) % 0.08;
-            let animate_click_transform = item2_background_trans.times(Mat4.scale(1 + click_animate, 1 + click_animate, 1, 0));
-            this.shapes.sphere.draw(context, program_state, animate_click_transform, this.materials.menubuttons);
-            // draw item on next mouse click
-            this.userdraw = "rock";
-            this.offset = price2;
-        }
-        else {
-            this.shapes.sphere.draw(context, program_state, item2_background_trans, this.materials.menubuttons);
-        }
-
-
-        // draw item 3: spiky coral
-        let item3_background_trans = model_transform.times(Mat4.translation(-13, 20.8, 0, 0))
-            .times(Mat4.scale(1.4, 1.4, .5, 0));
-
-        let item3_trans = item3_background_trans.times(Mat4.translation(0.2, -0.25, 2, 0))
-            .times(Mat4.scale(0.5, 0.47, 1, 0));
-        this.shapes.coral2.draw(context, program_state, item3_trans, this.materials.coral.override({color: hex_color("#f59f49")}));
-
-        let item3_price_trans = model_transform.times(Mat4.translation(-16, 20.3, 1, 0))
-            .times(Mat4.scale(0.75, 0.75, 1, 0))
-        var price3 = 3;
-        this.shapes.text.set_string("$"+ price3.toString(), context.context);
-        this.shapes.text.draw(context, program_state, item3_price_trans, this.materials.text_image);
-
-        // get position of item 3 button
-        let button3x = ((item3_background_trans[0][3]) - (-5)) / 22.5;
-        let button3y = (item3_background_trans[1][3] - (10.5)) / 12;
-
-        // check if item 3 button is clicked
-        if ((this.mousex < button3x + 0.1 && this.mousex > button3x - 0.1) && (this.mousey < button3y + 0.12 && this.mousey > button3y - 0.1) && (this.sand_dollars - price3 >= 0))
-        {
-            // if clicked --> animate item so that we know it is clicked
-            let click_animate = (t/6) % 0.08;
-            let animate_click_transform = item3_background_trans.times(Mat4.scale(1 + click_animate, 1 + click_animate, 1, 0));
-            this.shapes.sphere.draw(context, program_state, animate_click_transform, this.materials.menubuttons);
-            // draw item on next mouse click
-            this.userdraw = "coral2";
-            this.offset = price3;
-        }
-        else {
-            this.shapes.sphere.draw(context, program_state, item3_background_trans, this.materials.menubuttons);
-        }
-
-        // draw item 4: golden squid
-        let item4_background_trans = model_transform.times(Mat4.translation(-6.5, 20.8, 0, 0))
-            .times(Mat4.scale(1.4, 1.4, .5, 0));
-
-        let item4_trans = item4_background_trans.times(Mat4.translation(0.1, -0.25, 2, 0))
-            .times(Mat4.scale(.7, .33, 1, 0))
-        this.shapes.squid.draw(context, program_state, item4_trans, this.materials.gold);
-
-        let item4_price_trans = model_transform.times(Mat4.translation(-10.8, 20.3, 1, 0))
-            .times(Mat4.scale(0.75, 0.75, 1, 0))
-        var price4 = 15;
-        this.shapes.text.set_string("$"+ price4.toString(), context.context);
-        this.shapes.text.draw(context, program_state, item4_price_trans, this.materials.text_image);
-
-
-        // get position of item 4 button
-        let button4x = ((item4_background_trans[0][3]) - (-5)) / 22.5;
-        let button4y = (item4_background_trans[1][3] - (10.5)) / 12;
-
-        // check if item 4 button is clicked
-        if ((this.mousex < button4x + 0.1 && this.mousex > button4x - 0.1) && (this.mousey < button4y + 0.12 && this.mousey > button4y - 0.1) && (this.sand_dollars - price4 >= 0))
-        {
-            // if clicked --> animate item so that we know it is clicked
-            let click_animate = (t/6) % 0.08;
-            let animate_click_transform = item4_background_trans.times(Mat4.scale(1 + click_animate, 1 + click_animate, 1, 0));
-            this.shapes.sphere.draw(context, program_state, animate_click_transform, this.materials.menubuttons);
-            // draw item on next mouse click
-            this.userdraw = "squid";
-            this.offset = price4;
-        }
-        else {
-            this.shapes.sphere.draw(context, program_state, item4_background_trans, this.materials.menubuttons);
-        }
-
-        // draw item 5: starfish
-        let item5_background_trans = model_transform.times(Mat4.translation(-1.5, 20.8, 0, 0))
-            .times(Mat4.scale(1.4, 1.4, .5, 0));
-
-        let item5_trans = item5_background_trans.times(Mat4.translation(-0.1, -0.25, 2, 0))
-            .times(Mat4.scale(.5, .5, 1, 0))
-        this.shapes.starfish.draw(context, program_state, item5_trans, this.materials.coral.override({color: hex_color("#ff892e")}));
-
-        let item5_price_trans = model_transform.times(Mat4.translation(-4.7, 20.3, 1, 0))
-            .times(Mat4.scale(0.75, 0.75, 1, 0))
-        var price5 = 5;
-        this.shapes.text.set_string("$"+ price5.toString(), context.context);
-        this.shapes.text.draw(context, program_state, item5_price_trans, this.materials.text_image);
-
-        // get position of item 5 button
-        let button5x = ((item5_background_trans[0][3]) - (-5)) / 22.5;
-        let button5y = (item5_background_trans[1][3] - (10.5)) / 12;
-
-        // check if item 5 button is clicked
-        if ((this.mousex < button5x + 0.1 && this.mousex > button5x - 0.1) && (this.mousey < button5y + 0.12 && this.mousey > button5y - 0.1) && (this.sand_dollars - price5 >= 0))
-        {
-            // if clicked --> animate item so that we know it is clicked
-            let click_animate = (t/6) % 0.08;
-            let animate_click_transform = item5_background_trans.times(Mat4.scale(1 + click_animate, 1 + click_animate, 1, 0));
-            this.shapes.sphere.draw(context, program_state, animate_click_transform, this.materials.menubuttons);
-            // draw item on next mouse click
-            this.userdraw = "starfish";
-            this.offset = price5;
-        }
-        else {
-            this.shapes.sphere.draw(context, program_state, item5_background_trans, this.materials.menubuttons);
-        }
-        // draw item 6: seashell
-        let item6_background_trans = model_transform.times(Mat4.translation(4, 20.8, 0, 0))
-            .times(Mat4.scale(1.4, 1.4, .5, 0));
-
-        let item6_trans = item6_background_trans.times(Mat4.translation(0.2, -0.25, 2, 0))
-            .times(Mat4.scale(.4, .4, 1, 0))
-        this.shapes.seashell.draw(context, program_state, item6_trans, this.materials.coral.override({color: hex_color("#f5988e")}));
-
-        let item6_price_trans = model_transform.times(Mat4.translation(0.3, 20.3, 1, 0))
-            .times(Mat4.scale(0.75, 0.75, 1, 0))
-        var price6 = 4;
-        this.shapes.text.set_string("$"+ price6.toString(), context.context);
-        this.shapes.text.draw(context, program_state, item6_price_trans, this.materials.text_image);
-
-        // get position of item 6 button
-        let button6x = ((item6_background_trans[0][3]) - (-5)) / 22.5;
-        let button6y = (item6_background_trans[1][3] - (10.5)) / 12;
-
-        // check if item 6 button is clicked
-        if ((this.mousex < button6x + 0.1 && this.mousex > button6x - 0.1) && (this.mousey < button6y + 0.12 && this.mousey > button6y - 0.1) && (this.sand_dollars - price6 >= 0))
-        {
-            // if clicked --> animate item so that we know it is clicked
-            let click_animate = (t/6) % 0.08;
-            let animate_click_transform = item6_background_trans.times(Mat4.scale(1 + click_animate, 1 + click_animate, 1, 0));
-            this.shapes.sphere.draw(context, program_state, animate_click_transform, this.materials.menubuttons);
-            // draw item on next mouse click
-            this.userdraw = "shell";
-            this.offset = price6;
-        }
-        else {
-            this.shapes.sphere.draw(context, program_state, item6_background_trans, this.materials.menubuttons);
-        }
-
-        // draw item 7: jellyfish
-        let item7_background_trans = model_transform.times(Mat4.translation(9.2, 20.8, 0, 0))
-            .times(Mat4.scale(1.4, 1.4, .5, 0));
-
-        let item7_trans = item7_background_trans.times(Mat4.translation(-.35, -0.4, 2, 0))
-            .times(Mat4.scale(.4, .35, 1, 0))
-            .times(Mat4.rotation(-33, 1, 0, 0))
-            .times(Mat4.rotation(-66, 0, 1, 0));
-        this.shapes.jellyfish.draw(context, program_state, item7_trans, this.materials.coral.override({color: hex_color("#6ee7f0")}));
-
-        let item7_price_trans = model_transform.times(Mat4.translation(5.7, 20.3, 1, 0))
-            .times(Mat4.scale(0.75, 0.75, 1, 0))
-        var price7 = 7;
-        this.shapes.text.set_string("$"+ price7.toString(), context.context);
-        this.shapes.text.draw(context, program_state, item7_price_trans, this.materials.text_image);
-
-        // get position of item 7 button
-        let button7x = ((item7_background_trans[0][3]) - (-5)) / 22.5;
-        let button7y = (item7_background_trans[1][3] - (10.5)) / 12;
-
-        // check if item 7 button is clicked
-        if ((this.mousex < button7x + 0.1 && this.mousex > button7x - 0.1) && (this.mousey < button7y + 0.12 && this.mousey > button7y - 0.1) && (this.sand_dollars - price7 >= 0))
-        {
-            // if clicked --> animate item so that we know it is clicked
-            let click_animate = (t/6) % 0.08;
-            let animate_click_transform = item7_background_trans.times(Mat4.scale(1 + click_animate, 1 + click_animate, 1, 0));
-            this.shapes.sphere.draw(context, program_state, animate_click_transform, this.materials.menubuttons);
-            // draw item on next mouse click_scale
-            this.userdraw = "jellyfish";
-            this.offset = price7;
-        }
-        else {
-            this.shapes.sphere.draw(context, program_state, item7_background_trans, this.materials.menubuttons);
-        }
-
-        // draw item 8: nest
-        let item8_background_trans = model_transform.times(Mat4.translation(15.5, 20.8, 0, 0))
-            .times(Mat4.scale(1.4, 1.4, .5, 0));
-
-        let item8_trans = item8_background_trans.times(Mat4.translation(-.35, -0.1, 2, 0))
-            .times(Mat4.scale(0.6, 0.6, 0.6, 0));
-        this.shapes.nest.draw(context, program_state, item8_trans, this.materials.coral.override({color:hex_color("#7a5038")}));
-
-        let egg1 = item8_trans.times(Mat4.scale(0.45,0.75,0.6,0))
-            .times(Mat4.translation(-0.8,0.2,0,0));
-        this.shapes.sphere.draw(context, program_state, egg1, this.materials.egg);
-        let egg2 = item8_trans.times(Mat4.scale(0.4,0.7,0.6,0))
-            .times(Mat4.translation(-1.5,0,-0.5,0))
-            .times(Mat4.rotation(-10,1,1,1));
-        this.shapes.sphere.draw(context, program_state, egg2, this.materials.egg);
-        let egg3 = item8_trans.times(Mat4.scale(0.4,0.78,0.6,0))
-            .times(Mat4.translation(0,0,-0.6,0))
-            .times(Mat4.rotation(-10,1,1,1));
-        this.shapes.sphere.draw(context, program_state, egg3, this.materials.egg);
-        let egg4 = item8_trans.times(Mat4.scale(0.5,0.4,0.6,0))
-            .times(Mat4.translation(1,0.7,1,0))
-            .times(Mat4.rotation(-10,1,1,1));
-        this.shapes.sphere.draw(context, program_state, egg4, this.materials.egg);
-
-        let item8_price_trans = model_transform.times(Mat4.translation(10.5, 20.3, 1, 0))
-            .times(Mat4.scale(0.75, 0.75, 1, 0))
-        var price8 = 12;
-        this.shapes.text.set_string("$"+ price8.toString(), context.context);
-        this.shapes.text.draw(context, program_state, item8_price_trans, this.materials.text_image);
-
-        // get position of item 8 button
-        let button8x = ((item8_background_trans[0][3]) - (-5)) / 22.5;
-        let button8y = (item8_background_trans[1][3] - (10.5)) / 12;
-
-        // check if item 8 button is clicked
-        if ((this.mousex < button8x + 0.1 && this.mousex > button8x - 0.1) && (this.mousey < button8y + 0.12 && this.mousey > button8y - 0.1) && (this.sand_dollars - price8 >= 0))
-        {
-            // if clicked --> animate item so that we know it is clicked
-            let click_animate = (t/6) % 0.08;
-            let animate_click_transform = item8_background_trans.times(Mat4.scale(1 + click_animate, 1 + click_animate, 1, 0));
-            this.shapes.sphere.draw(context, program_state, animate_click_transform, this.materials.menubuttons);
-            // draw item on next mouse click
-            this.userdraw = "nest";
-            this.offset = price8;
-        }
-        else {
-            this.shapes.sphere.draw(context, program_state, item8_background_trans, this.materials.menubuttons);
-        }
-
-        // draw money count
-        let dash_model = Mat4.identity().times(Mat4.translation(11.2,16.8,4,0)).times(Mat4.scale(1.3,1.3,0.2,5));
-        let point_string = this.sand_dollars;
-        this.shapes.text.set_string(point_string.toString(), context.context);
-        this.shapes.square.draw(context, program_state, dash_model.times(Mat4.scale(.50, .50, .50)), this.materials.sanddollar);
-        dash_model = dash_model.times(Mat4.translation(1,-0.09,0));
-        this.shapes.text.draw(context, program_state, dash_model.times(Mat4.scale(.50, .50, .50)), this.materials.text_image);
-
-
-        // draw lifes count
-        let lifes_model = Mat4.identity().times(Mat4.translation(-21.5,16,4,0)).times(Mat4.scale(1.2,1.2,0.2,5));
-        let lifes_string = this.lifes;
-        this.shapes.text.set_string("lives:", context.context);
-        this.shapes.square.draw(context, program_state, lifes_model.times(Mat4.scale(2, 2, .50)), this.materials.livestext);
-        for (var i = 0; i < this.lifes; i++){
-            if (i == 0){
-                var heart_model = lifes_model.times(Mat4.translation(2.7, 0.55, 0));
-            }
-            else{
-                var heart_model = lifes_model.times(Mat4.translation(i*1.5+2.7, 0.55, 0));
-            }
-            this.shapes.square.draw(context, program_state, heart_model.times(Mat4.scale(0.7, 0.7, 1)), this.materials.heart);
-        }
-
-    }
-    // plant_peashooter() {
-    //     // add a new peashooter at the current grid index if not already present
-    //     const position = [...this.grid_index];
-    //     if (!this.plants.some(plant => plant[0] === position[0] && plant[1] === position[1])) {
-    //         this.plants.push(position);
-    //     }
-    // }
-    //
-    // remove_peashooter() {
-    //     // remove peashooter at the current grid index if present
-    //     this.plants = this.plants.filter(plant => plant[0] !== this.grid_index[0] || plant[1] !== this.grid_index[1]);
-    // }
-
-
 
 
     display(context, program_state) {
@@ -809,66 +401,7 @@ export class Plantbie extends Scene {
         const time_loading_screen_end = 9;
         this.game_sound.play();
 
-        //let loading_transform = Mat4.identity().times(Mat4.translation(-7.5,13,11,0)).times(Mat4.scale(1.2,1.2,0.2,5));
-        //this.shapes.text.set_string("loading...", context.context);
-        //this.shapes.text.draw(context, program_state, loading_transform.times(Mat4.scale(.35, .35, .50)), this.materials.text_image);
-        /*if (time_in_sec > time_loading_screen && time_in_sec < time_loading_screen_end) {
-            let model_transform = Mat4.identity();
-            this.loading_sound.play();
-            console.log("hi")
-            this.shapes.square.draw(context, program_state, model_transform.times(Mat4.translation(-5,9,10,0)).times(Mat4.scale(15, 10, 1)),this.materials.square);
 
-                let loading_transform = Mat4.identity().times(Mat4.translation(-7.5,13,11,0)).times(Mat4.scale(1.2,1.2,0.2,5));
-                this.shapes.text.set_string("loading...", context.context);
-                this.shapes.text.draw(context, program_state, loading_transform.times(Mat4.scale(.35, .35, .50)), this.materials.text_image);
-
-                let max_angle = .1 * Math.PI;
-
-                const time_in_sec = t/1000;
-                const time_fish1 = 3;
-
-                if (time_in_sec > time_fish1) {
-                    let fish1_trans = model_transform.times(Mat4.translation(-15, 10, 11))
-                                              .times(Mat4.scale(0.8,0.6,0.5,1));
-                    this.shapes.peashooter.draw(context, program_state, fish1_trans, this.materials.peashooter);
-                }
-
-                const time_fish2 = 4;
-
-                if (time_in_sec > time_fish2) {
-                    let fish2_trans = model_transform.times(Mat4.translation(-10, 10, 11))
-                                                  .times(Mat4.scale(0.8,0.6,0.5,1));
-                    this.shapes.peashooter.draw(context, program_state, fish2_trans, this.materials.peashooter);
-                }
-
-                const time_fish3 = 5;
-
-                if (time_in_sec > time_fish3) {
-
-                    let fish3_trans = model_transform.times(Mat4.translation(-5, 10, 11))
-                                                  .times(Mat4.scale(0.8,0.6,0.5,1));
-                    this.shapes.peashooter.draw(context, program_state, fish3_trans, this.materials.peashooter);
-                }
-
-                const time_fish4 = 6;
-
-                if (time_in_sec > time_fish4) {
-
-                    let fish4_trans = model_transform.times(Mat4.translation(0, 10, 11))
-                                                  .times(Mat4.scale(0.8,0.6,0.5,1));
-                    this.shapes.peashooter.draw(context, program_state, fish4_trans, this.materials.peashooter);
-                }
-
-                const time_fish5 = 7;
-
-                if (time_in_sec > time_fish5) {
-                    let fish5_trans = model_transform.times(Mat4.translation(5.0, 10, 11))
-                                                 .times(Mat4.scale(0.8,0.6,0.5,1));
-
-                    this.shapes.peashooter.draw(context, program_state, fish5_trans, this.materials.peashooter);
-                }
-            } // end of loading screen
-    */
         //this.loading_sound.play();
         if(this.change_view){
             program_state.set_camera(this.initial_camera_location);
@@ -981,6 +514,9 @@ export class Plantbie extends Scene {
             .times(Mat4.translation(10, 0, -2));
         this.shapes.headstone.draw(context, program_state, headstone_transform, this.materials.headstone);
 
+        let peashooter = "pea";
+
+
 
         //0 - peashooter
         //1 - watermelon
@@ -989,18 +525,34 @@ export class Plantbie extends Scene {
         let normal_material = this.materials.buffer;
         let highlight_material = this.materials.buffer_highlight;
         let base_transform = Mat4.identity()
-            .times(Mat4.translation(-13, 4, -5)) // Adjust the position in the scene
+            .times(Mat4.translation(-13, 5, 1)) // Adjust the position in the scene
             .times(Mat4.rotation(Math.PI / 2, 0, 1, 0)) // Rotate to make it vertical
             .times(Mat4.scale(2, 2, 2)); // Scale to make it a small square
 
         // Draw four small squares lined up from left to right
         for (let i = 0; i < 10; i++) {
             let model_transform = base_transform
-                .times(Mat4.translation(2, 0, 2 + i)); // Adjust spacing (2 units apart in this case)
+                .times(Mat4.translation(2, 0, 2 + i)) // Adjust spacing (2 units apart in this case)
+                .times(Mat4.scale(0.5, 0.5, 0.5))
             // Choose the material based on this.pos
             let material = (this.buffer_index === i) ? highlight_material : normal_material;
             this.shapes.buffer.draw(context, program_state, model_transform, material);
         }
+
+        for (let i=0; i<10; i++){
+            let model_transform = base_transform
+                .times(Mat4.translation(2, 0, 2 + i)) // Adjust spacing (2 units apart in this case)
+                .times(Mat4.scale(0.5, 0.5, 0.5))
+            if(this.buf_plants[i] === 1){
+
+                this.shapes.text.set_string(peashooter, context.context);
+                this.shapes.text.draw(context, program_state, model_transform
+                    .times(Mat4.rotation(-1 * Math.PI / 2, 0, 1, 0))
+                    .times(Mat4.translation(-0.5, 0, 1))
+                    .times(Mat4.scale(0.3, 0.3, 0.3)), this.materials.text_image);
+            }
+        }
+
 
 
         // Position the clouds
