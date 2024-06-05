@@ -111,6 +111,8 @@ export class Plantbie extends Scene {
             watermelon_eyes: new Shape_From_File("./assets/melon_eye.obj"),
             text: new Text_Line(35),
             pea: new defs.Subdivision_Sphere(4),
+
+            test_rec: new VerticalRectangle(),
             //cloud: new Cloud(),
             //outlined_square: new Outlined_Square(),
         };
@@ -181,6 +183,12 @@ export class Plantbie extends Scene {
             //     specularity: 1,
             //     texture: new Texture("assets/sky-gradient.jpg")
             // }),
+            vertical_rectangle: new Material(textured, {
+                color: hex_color("#87CEEB"),
+                ambient: 1,
+                diffusivity: 0.9,
+                specularity: 1,
+            }),
             sky: new Material(new defs.Phong_Shader(), {
                 ambient: 0.9,
                 diffusivity: 0.1,
@@ -770,18 +778,21 @@ export class Plantbie extends Scene {
         }
 
     }
-    plant_peashooter() {
-        // add a new peashooter at the current grid index if not already present
-        const position = [...this.grid_index];
-        if (!this.plants.some(plant => plant[0] === position[0] && plant[1] === position[1])) {
-            this.plants.push(position);
-        }
-    }
+    // plant_peashooter() {
+    //     // add a new peashooter at the current grid index if not already present
+    //     const position = [...this.grid_index];
+    //     if (!this.plants.some(plant => plant[0] === position[0] && plant[1] === position[1])) {
+    //         this.plants.push(position);
+    //     }
+    // }
+    //
+    // remove_peashooter() {
+    //     // remove peashooter at the current grid index if present
+    //     this.plants = this.plants.filter(plant => plant[0] !== this.grid_index[0] || plant[1] !== this.grid_index[1]);
+    // }
 
-    remove_peashooter() {
-        // remove peashooter at the current grid index if present
-        this.plants = this.plants.filter(plant => plant[0] !== this.grid_index[0] || plant[1] !== this.grid_index[1]);
-    }
+
+
 
     display(context, program_state) {
         // display():  Called once per frame of animation.
@@ -875,10 +886,16 @@ export class Plantbie extends Scene {
                 .times(Mat4.translation(0, 1, 0));
         // this.shapes.peashooter.draw(context, program_state, plant_transform, this.materials.peashooter);
 
-        // this.render_peashooter(context,program_state,0,0.05,0,t);
+        // this.render_peashooter(context,program_state,8,0.05,4,t);
         // this.render_watermelon(context,program_state,-2,0.05,-2,t);
 
         // this.render_pea(context,program_state,0.2,1.13,-0.1,t);
+        let cen = this.grid_positions[22];
+        // let zombie_cords = [[cen[0]-0.5, cen[1]+2, cen[2]+0.5], [cen[0]+0.5, cen[1], cen[2]-0.5]];
+        // this.render_peashooter(context, program_state, cen[0]-0.5, cen[1]+2, cen[2]+1, t);
+        // this.render_peashooter(context, program_state, cen[0]+0.5, cen[1], cen[2]-1, t);
+        // console.log("top_left_bound: " + [cen[0]-0.5 - 8, cen[1]+2+0.05, cen[2]+1-4]);
+
 
         for(let i=0; i<this.cool_down.length; i++){
             if(this.cool_down[i] === 0){
@@ -896,15 +913,11 @@ export class Plantbie extends Scene {
             if(this.plant_here[i] !== 0){
                 if(this.plant_here[i] === 1){
                     this.render_peashooter(context, program_state, pos[0], pos[1], pos[2], t);
-                    // console.log(i);
-                    // console.log(this.cool_down);
-                    // console.log(t);
+
                     if((t - this.cool_down[i]) > 0 && (t - this.cool_down[i]) < 0.1){
                         this.peas.push([i, t]);
                         this.cool_down[i] = t + 2.5;
-                        // console.log(t);
-                        // console.log(this.cool_down[i]);
-                        // console.log(this.peas);
+
                     }
                 }
             }
@@ -923,16 +936,35 @@ export class Plantbie extends Scene {
             this.shapes.square.draw(context, program_state, outline_transform, this.materials.outlined_square);
         }
 
+        // this.shapes.test_rec.draw(context, program_state, Mat4.identity(), this.materials.vertical_rectangle);
+
         for(let i=0; i<this.peas.length; i++) {
             let ind = this.peas[i][0];
             let st = this.peas[i][1];
             let pos = this.grid_positions[ind];
             let dt = (t - st);
-            if (dt < 8) {
-                this.render_pea(context, program_state, pos[0] + dt * 2.5 - 8, pos[1], pos[2] - 4);
-            } else {
+            let pea_center = [pos[0]+dt*2.5-8+0.2, pos[1]+1.13, pos[2]-4-0.1];
+            let pea_top_left = [pea_center[0]-0.25, pea_center[1]+0.25, pea_center[2]+0.25];
+            let pea_bot_right = [pea_center[0]+0.25, pea_center[1]-0.25, pea_center[2]-0.25];
+            let pea_cords = [pea_top_left, pea_bot_right];
+            let cen = this.grid_positions[22];
+            let zombie_cords = [[cen[0]-0.5-8, cen[1]+2+0.05, cen[2]+1-4], [cen[0]+0.5-8, cen[1]+0.05, cen[2]-1-4]];
+
+            // console.log("bullet: " + pea_cords);
+            // console.log("zombie: " + zombie_cords);
+            // console.log("pea_index: " + i);
+            if(collision_detection(pea_cords, zombie_cords)){
+                // console.log("here!");
                 this.peas.splice(i, 1);
+            }else{
+                if (dt < 8) {
+                    this.render_pea(context, program_state, pos[0] + dt * 2.5 - 8, pos[1], pos[2] - 4);
+                } else {
+                    this.peas.splice(i, 1);
+                }
             }
+
+
         }
 
         // Position the sun
@@ -1206,3 +1238,31 @@ class Ring_Shader extends Shader {
         }`;
     }
 }
+
+function collision_detection(bullet_cords, zombie_cords) {
+    // console.log("bye");
+    let top_left = [bullet_cords[1][0], bullet_cords[0][1], bullet_cords[0][2]];
+    let top_right = [bullet_cords[1][0], bullet_cords[0][1], bullet_cords[1][2]];
+    let bot_left = [bullet_cords[1][0], bullet_cords[1][1], bullet_cords[0][2]];
+    let bot_right = bullet_cords[1];
+    let rec = zombie_cords;
+    let points = [top_left, top_right, bot_left, bot_right];
+    // console.log("bullet: " + bullet_cords);
+    // console.log("zombie: " + zombie_cords);
+    console.log("bounding x " + rec[0][0] + " " + rec[1][0]);
+    console.log("bounding y " + rec[0][1] + " " + rec[1][1]);
+    console.log("bounding z " + rec[0][2] + " " + rec[1][2]);
+    for(let i=0; i < points.length; i++) {
+        let point = points[i];
+        console.log("testing " + point);
+        let temp1 = ((rec[0][0] <= point[0]) & (rec[1][0] >= point[0]));
+        let temp2 = ((rec[0][1] >= point[1]) & (rec[1][1] <= point[1]));
+        let temp3 = ((rec[0][2] >= point[2]) & (rec[1][2] <= point[2]));
+        console.log([temp1, temp2, temp3]);
+        if (temp1 && temp2 && temp3) {
+            return true;
+        }
+    }
+}
+
+
