@@ -8,6 +8,35 @@ const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Matrix, Mat4, Light, Shape, Shader, Texture, Material, Scene,
 } = tiny;
 
+//inclusive
+function getRandomInt(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+class Zombie{
+  constructor(x,y,z,t,type){
+     this.base = [2*(x-1),y+0.05,2*(z-1)];                   //this should be the grid's coordinate
+     this.birth_time = t;
+     this.eating_time = 0;
+     this.speed = [0.5,0,0];                //this is a speed vector per second (t)
+     this.upper_left_near_offset = [-0.5,2.5,-0.5];      //current base coordinate + offset = point. THESE ARE TENTATIVE AND NEEDS TO BE TESTED
+     this.lower_right_far_offset = [0.5,0,0.5];
+     this.type = type;  //normal, flag, conehead, bucket
+     if(type==="normal"){
+         this.health = 100;
+     }
+     else if(type==="flag"){
+          this.health = 150;
+      }
+     else if(type==="conehead"){
+          this.health = 200;
+      }
+     else {this.health = 300;} //bucket
+  }
+}
+
 class Square extends Shape {
     constructor() {
         super("position", "normal");
@@ -88,6 +117,10 @@ export class Plantbie extends Scene {
         // Drawing queue for purchased items
         this.userdraw = "none";
         this.item_queue = [];
+        this.zombies = [];
+        this.game_end = false;
+        this.test = false; //testing variable
+        this.prev_t = 0;
 
         // At the beginning of our program, load one of each of these shape definitions onto the GPU.
         this.shapes = {
@@ -110,6 +143,20 @@ export class Plantbie extends Scene {
             watermelon_head: new Shape_From_File("./assets/melon_head.obj"),
             watermelon_eyes: new Shape_From_File("./assets/melon_eye.obj"),
             text: new Text_Line(5),
+            //zombie parts
+            zombie_head: new Shape_From_File("./assets/zombie/zombie_head.obj"),
+            zombie_torso: new Shape_From_File("./assets/zombie/zombie_torso.obj"),
+            zombie_left_leg: new Shape_From_File("./assets/zombie/zombie_right_leg.obj"),
+            zombie_right_leg: new Shape_From_File("./assets/zombie/zombie_left_leg.obj"),
+            zombie_left_upper_arm: new Shape_From_File("./assets/zombie/left_upper_arm.obj"),
+            //note that I made a mistake for the lower arms, I swapped the left & right side. So here this is addressing that. I also actually swapped the upper arms, but they don't matter after rotation
+            zombie_left_lower_arm: new Shape_From_File("./assets/zombie/right_lower_arm.obj"),
+            zombie_right_upper_arm: new Shape_From_File("./assets/zombie/right_upper_arm.obj"),
+            zombie_right_lower_arm: new Shape_From_File("./assets/zombie/left_lower_arm.obj"),
+            conehead: new Shape_From_File("./assets/zombie/conehead.obj"),
+            bucket: new Shape_From_File("./assets/zombie/bucket.obj"),
+            flag: new Shape_From_File("./assets/zombie/flag.obj"),
+            // text: new Text_Line(35),
             pea: new defs.Subdivision_Sphere(4),
 
 
@@ -261,6 +308,120 @@ export class Plantbie extends Scene {
         }
     }
 
+    render_dead_zombie(context,program_state,x,y,z,t){
+        //pass
+    }
+
+//type is a string, "normal"/"conehead"/"bucket"/"flag"
+    render_walking_zombie(context, program_state, x, y, z, t, type) {
+        //this is because there is an offset, grid is CENTERED at (0,y,0), but that point is actually (5,y,3)
+        let base_matrix = Mat4.identity()
+            .times(Mat4.translation(x-8,y,z-4),);
+        let leg_movement = Mat4.translation(0,0.3*Math.sin(2*(t+Math.PI/2)),0);
+        let left_leg_matrix = base_matrix.times(Mat4.scale(0.3,0.3,0.3)).times(Mat4.translation(-0.5,1,1)).times(leg_movement);
+        left_leg_matrix = left_leg_matrix.times(Mat4.rotation(-Math.PI/4-0.7,0,1,0));
+        this.shapes.zombie_left_leg.draw(context, program_state, left_leg_matrix, this.materials.peashooter);
+        let leg_movement_2 = Mat4.translation(0,0.3*Math.sin(2*(t)),0)
+        let right_leg_matrix = base_matrix.times(Mat4.scale(0.3,0.3,0.3)).times(Mat4.translation(0,1,-1).times(leg_movement_2));
+        right_leg_matrix = right_leg_matrix.times(Mat4.rotation(-Math.PI/4-0.5,0,1,0));
+        this.shapes.zombie_right_leg.draw(context, program_state, right_leg_matrix, this.materials.peashooter);
+        base_matrix = base_matrix.times(Mat4.translation(0,0.015*Math.sin(1.5*(t+Math.PI/4)),0));
+        let torso_matrix = base_matrix.times(Mat4.scale(0.6,0.6,0.6)).times(Mat4.translation(-0.2,2.7,0));
+        torso_matrix = torso_matrix.times(Mat4.rotation(-Math.PI/4-1,0,1,0)).times(Mat4.rotation(-0.2,1,0,0));
+        // let torso_rotation_matrix = Mat4.rotation(0.2*Math.sin(2*t),1,0,0)
+        // torso_matrix = torso_matrix.times(torso_rotation_matrix);
+        this.shapes.zombie_torso.draw(context, program_state, torso_matrix, this.materials.peashooter);
+        let left_upper_arm_matrix = base_matrix.times(Mat4.translation(-0.25,1.7,0.5)).times(Mat4.scale(0.15,0.15,0.15));
+        left_upper_arm_matrix=left_upper_arm_matrix.times(Mat4.rotation(Math.PI/4+0.5,0,1,0));
+        this.shapes.zombie_left_upper_arm.draw(context, program_state, left_upper_arm_matrix, this.materials.peashooter);
+        let left_lower_arm_matrix = Mat4.translation(-.1,-.8,0).times(left_upper_arm_matrix.times(Mat4.scale(2,2,2)));
+        left_lower_arm_matrix = left_lower_arm_matrix.times(Mat4.rotation(Math.PI+0.5,0,1,0));
+        this.shapes.zombie_left_lower_arm.draw(context, program_state, left_lower_arm_matrix, this.materials.peashooter);
+        let right_upper_arm_matrix = base_matrix.times(Mat4.translation(-0.25,1.7,-0.5)).times(Mat4.scale(0.15,0.15,0.15));
+        right_upper_arm_matrix=right_upper_arm_matrix.times(Mat4.rotation(Math.PI/4+0.5,0,1,0));
+        this.shapes.zombie_right_upper_arm.draw(context, program_state, right_upper_arm_matrix, this.materials.peashooter);
+        this.shapes.zombie_left_upper_arm.draw(context, program_state, left_upper_arm_matrix, this.materials.peashooter);
+        let right_lower_arm_matrix = Mat4.translation(-.1,-.8,0).times(right_upper_arm_matrix.times(Mat4.scale(2,2,2)));
+        right_lower_arm_matrix = Mat4.translation(0,.15,0.1).times(right_lower_arm_matrix.times(Mat4.rotation(Math.PI+0.5,0,1,0)));
+        if(type==="flag"){
+            let flag_matrix = right_lower_arm_matrix;
+            flag_matrix = (flag_matrix).times(Mat4.scale(2.5,2.5,2.5));
+            flag_matrix = Mat4.translation(-0.5,1,0).times(flag_matrix);
+            this.shapes.flag.draw(context, program_state, flag_matrix, this.materials.peashooter);
+        }
+        else
+            this.shapes.zombie_right_lower_arm.draw(context, program_state, right_lower_arm_matrix, this.materials.peashooter);
+        let head_matrix = base_matrix.times(Mat4.translation(-0.5,2.6,0)).times(Mat4.scale(0.25,0.25,0.25));
+        // head_matrix = Mat4.rotation(0.015*Math.sin(1.5*t),0,0,1).times(head_matrix);
+        //rotation pivot is a little lower, remember transformation is applied from right to left
+        head_matrix = (head_matrix).times(Mat4.rotation(-Math.PI/4-0.5,0,1,0));
+        this.shapes.zombie_head.draw(context, program_state, head_matrix, this.materials.peashooter);
+        if(type==="bucket"){
+            let bucket_matrix = Mat4.translation(0,0.3,0).times(head_matrix).times(Mat4.scale(1.6,1.6,1.6));
+            this.shapes.bucket.draw(context, program_state, bucket_matrix, this.materials.black);
+        }
+        else if(type==="conehead"){
+            let bucket_matrix = Mat4.translation(0.2,0.7,0).times(head_matrix).times(Mat4.scale(1.3,1.3,1.3));
+            this.shapes.conehead.draw(context, program_state, bucket_matrix, this.materials.black);
+
+        }
+
+    }
+    render_eating_zombie (context,program_state,x,y,z,t,type){
+        let base_matrix = Mat4.identity()
+            .times(Mat4.translation(x-8,y+0.05,z-4),);
+        let left_leg_matrix = base_matrix.times(Mat4.scale(0.3,0.3,0.3)).times(Mat4.translation(-0.5,1,1));
+        left_leg_matrix = left_leg_matrix.times(Mat4.rotation(-Math.PI/4-0.7,0,1,0));
+        this.shapes.zombie_left_leg.draw(context, program_state, left_leg_matrix, this.materials.peashooter);
+        let right_leg_matrix = base_matrix.times(Mat4.scale(0.3,0.3,0.3)).times(Mat4.translation(0,1,-1));
+        right_leg_matrix = right_leg_matrix.times(Mat4.rotation(-Math.PI/4-0.5,0,1,0));
+        this.shapes.zombie_right_leg.draw(context, program_state, right_leg_matrix, this.materials.peashooter);
+        base_matrix = base_matrix.times(Mat4.translation(0,0.015*Math.sin(1.5*(t+Math.PI/4)),0));
+        let torso_matrix = base_matrix.times(Mat4.scale(0.6,0.6,0.6)).times(Mat4.translation(-0.2,2.7,0));
+        torso_matrix = torso_matrix.times(Mat4.rotation(-Math.PI/4-1,0,1,0)).times(Mat4.rotation(-0.2,1,0,0));
+        // let torso_rotation_matrix = Mat4.rotation(0.2*Math.sin(2*t),1,0,0)
+        // torso_matrix = torso_matrix.times(torso_rotation_matrix);
+        this.shapes.zombie_torso.draw(context, program_state, torso_matrix, this.materials.peashooter);
+        let left_upper_arm_matrix = base_matrix.times(Mat4.translation(-0.25,1.7,0.5)).times(Mat4.scale(0.15,0.15,0.15));
+        left_upper_arm_matrix = left_upper_arm_matrix.times(Mat4.rotation(Math.PI/4+0.8,0,1,0));
+        left_upper_arm_matrix=left_upper_arm_matrix.times(Mat4.rotation(Math.PI/4,1,0,0).times(Mat4.translation(0,0,-0.5)));
+        left_upper_arm_matrix=left_upper_arm_matrix.times(Mat4.rotation(0.1*Math.sin(4*t+0.25),1,0,0).times(Mat4.translation(0,0,-0.5)));
+        this.shapes.zombie_left_upper_arm.draw(context, program_state, left_upper_arm_matrix, this.materials.black);
+        let left_lower_arm_matrix = Mat4.translation(-.1,-.8,0).times(left_upper_arm_matrix.times(Mat4.scale(2,2,2)));
+        left_lower_arm_matrix = left_lower_arm_matrix.times(Mat4.rotation(Math.PI+0.5,0,1,0));
+        left_lower_arm_matrix = Mat4.translation(-1.55,0.825,0).times(Mat4.rotation(-Math.PI/4,0,0,1)).times(left_lower_arm_matrix);
+        this.shapes.zombie_left_lower_arm.draw(context, program_state, left_lower_arm_matrix, this.materials.black);
+        let right_upper_arm_matrix = base_matrix.times(Mat4.translation(-0.25,1.7,-0.5)).times(Mat4.scale(0.15,0.15,0.15));
+        right_upper_arm_matrix=right_upper_arm_matrix.times(Mat4.rotation(Math.PI/4+0.8,0,1,0));
+        right_upper_arm_matrix=right_upper_arm_matrix.times(Mat4.rotation(Math.PI/4,1,0,0).times(Mat4.translation(0,0,-0.5)));
+        right_upper_arm_matrix=right_upper_arm_matrix.times(Mat4.rotation(0.1*Math.sin(4*t+0.25),1,0,0).times(Mat4.translation(0,0,-0.5)));
+        this.shapes.zombie_right_upper_arm.draw(context, program_state, right_upper_arm_matrix, this.materials.peashooter);
+        let right_lower_arm_matrix = right_upper_arm_matrix;
+        right_lower_arm_matrix = right_upper_arm_matrix.times(Mat4.translation(-.1,-.8,0)).times(Mat4.rotation(Math.PI,0,1,0)).times(Mat4.scale(2,2,2));
+        if(type!=="flag") right_lower_arm_matrix = Mat4.translation(-0.4,-0.3,0.1).times(right_lower_arm_matrix);
+        if(type==="flag"){
+            let flag_matrix = right_lower_arm_matrix;
+            flag_matrix = (flag_matrix).times(Mat4.scale(2.5,2.5,2.5));
+            flag_matrix = Mat4.translation(0,0.7,-0.1).times(flag_matrix);
+            this.shapes.flag.draw(context, program_state, flag_matrix, this.materials.peashooter);
+        }
+        else
+            this.shapes.zombie_right_lower_arm.draw(context, program_state, right_lower_arm_matrix, this.materials.peashooter);
+        let head_matrix = base_matrix.times(Mat4.translation(-0.5,2.6,0)).times(Mat4.scale(0.25,0.25,0.25));
+        head_matrix = Mat4.rotation(0.015*Math.sin(1.5*t),0,0,1).times(head_matrix);
+        //rotation pivot is a little lower, remember transformation is applied from right to left
+        head_matrix = (head_matrix).times(Mat4.rotation(-Math.PI/4-0.5,0,1,0));
+        this.shapes.zombie_head.draw(context, program_state, head_matrix, this.materials.peashooter);
+        if(type==="bucket"){
+            let bucket_matrix = Mat4.translation(0,0.3,0).times(head_matrix).times(Mat4.scale(1.6,1.6,1.6));
+            this.shapes.bucket.draw(context, program_state, bucket_matrix, this.materials.black);
+        }
+        else if(type==="conehead"){
+            let bucket_matrix = Mat4.translation(0.2,0.7,0).times(head_matrix).times(Mat4.scale(1.3,1.3,1.3));
+            this.shapes.conehead.draw(context, program_state, bucket_matrix, this.materials.black);
+        }
+    }
+
     render_pea(context, program_state, x, y, z){
 
         // this.peas.append({grid, t});
@@ -312,8 +473,7 @@ export class Plantbie extends Scene {
 
     render_watermelon(context,program_state,x,y,z,t){
         let plant_transform = Mat4.identity()
-            .times(Mat4.translation(x,y,z),);
-
+            .times(Mat4.translation(x-8,y+0.05,z-4),);
         plant_transform = plant_transform.times(Mat4.scale(0.45,0.4,0.4));
         plant_transform = plant_transform.times(Mat4.rotation(Math.PI / 2, 0, 1, 0));
         const leaf_flex = Math.sin(2 * Math.PI * t) * 0.1; // Adjust frequency and amplitude as needed
@@ -368,9 +528,11 @@ export class Plantbie extends Scene {
         this.new_line();
         this.key_triggered_button("Plant", ["Enter"], () => {
                 let temp = this.grid_index[0] * 9 + this.grid_index[1];
-                this.plant_here[temp] = 1; // here we should change the value to same as the buffer, which will have a int value to represent the type of plant stored in this buffer.
-                // for now, 1 stands for peashooters.
-                this.cool_down[temp] = 0;
+                if(this.plant_here[temp]===0) {
+                    this.plant_here[temp] = 1; // here we should change the value to same as the buffer, which will have a int value to represent the type of plant stored in this buffer.
+                    // for now, 1 stands for peashooters.
+                    this.cool_down[temp] = 0;
+                }
             }
         );// need to insert into array of plants;
         this.key_triggered_button("Remove Plant", ["Escape"], () => this.grass_grid.set(this.grid_index, this.current_empty));// need to remove from array of plants
@@ -415,25 +577,61 @@ export class Plantbie extends Scene {
         program_state.projection_transform = Mat4.perspective(
             Math.PI / 4, context.width / context.height, .1, 1000);
 
-        //const t = program_state.animation_time / 1000;
-
         // Define the light for the scene
         const light_position = vec4(10, 7, -2, 1);
         program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
 
         let plant_transform = Mat4.identity()
             .times(Mat4.translation(0, 1, 0));
-        // this.shapes.peashooter.draw(context, program_state, plant_transform, this.materials.peashooter);
+        // this.render_walking_zombie(context,program_state,8,0.05,4,t,"bucket");
 
-        // this.render_peashooter(context,program_state,8,0.05,4,t);
-        // this.render_watermelon(context,program_state,-2,0.05,-2,t);
-
-        // this.render_pea(context,program_state,0.2,1.13,-0.1,t);
         let cen = this.grid_positions[22];
-        // let zombie_cords = [[cen[0]-0.5, cen[1]+2, cen[2]+0.5], [cen[0]+0.5, cen[1], cen[2]-0.5]];
-        // this.render_peashooter(context, program_state, cen[0]-0.5, cen[1]+2, cen[2]+1, t);
-        // this.render_peashooter(context, program_state, cen[0]+0.5, cen[1], cen[2]-1, t);
-        // console.log("top_left_bound: " + [cen[0]-0.5 - 8, cen[1]+2+0.05, cen[2]+1-4]);
+
+        //-------- rendering zombies
+        //Note that to render at coordinate "row 3 column 5", you need to instantiate z=3, x=5. The base coordinate is automatically converted.
+        if (!this.test) {       //this is the random generator logic - here we manually render a zombie centered at (8,0.05,4). Note that we must follow the exact format to push in a zombie object
+            let curZombie = new Zombie(5,0,3,t,"flag");
+            this.zombies.push(curZombie);
+            this.test = true;
+        }
+        // this.render_eating_zombie(context,program_state,8,0.05,4,t,"flag");
+        for(let i=0;i<this.zombies.length;++i){
+            let curZombie = this.zombies[i];
+            let x = curZombie.base[0], y=curZombie.base[1], z=curZombie.base[2];
+            if(curZombie.health<=0){
+                this.render_dead_zombie(context,program_state,x,y,z,t);
+                //remove this zombie from the zombie array since it is dead and set back the index
+                this.zombies.splice(i,1);
+                i--;
+                continue;
+            }
+            if(curZombie.health<=100 && curZombie.type!=="normal"){
+                //can implement corresponding utility fall here, optional tho
+                this.zombies[i].type = "normal";
+            }
+            let dt = t-this.zombies[i].birth_time-this.zombies[i].eating_time;
+            let displacement = dt*this.zombies[i].speed[0]; //for now zombies can only run straight in x direction. Note that speed is always positive
+            x = x - displacement;
+            if(x<=0){
+                this.game_end = true;
+                //this is the game end condition, trigger the game end screen and stop all other rendering
+            }
+            //calculate current grid
+            let temp = Math.floor(z-1)*9+Math.floor(x);
+            //means there is a plant here
+            if(this.plant_here[temp]!==0){
+                //problem: utilities & eating hands positions are affected by change / displacement in x for some reason
+                this.render_eating_zombie(context,program_state,x,y,z,t,this.zombies[i].type);
+                if(this.prev_t !== -1) this.zombies[i].eating_time = this.zombies[i].eating_time+(t-this.prev_t);      //total displacement should be base location - speed*(total time - eating time - birthtime)
+                this.prev_t=t;
+            }
+            else{
+                this.render_walking_zombie(context,program_state,x,y,z,t,this.zombies[i].type);
+                this.prev_t  = -1;
+            }
+        }
+
+        //---------rendering zombies finished
 
 
         for(let i=0; i<this.cool_down.length; i++){
@@ -451,8 +649,7 @@ export class Plantbie extends Scene {
 
             if(this.plant_here[i] !== 0){
                 if(this.plant_here[i] === 1){
-                    this.render_peashooter(context, program_state, pos[0], pos[1], pos[2], t);
-
+                    this.render_watermelon(context, program_state, pos[0], pos[1], pos[2], t);
                     if((t - this.cool_down[i]) > 0 && (t - this.cool_down[i]) < 0.1){
                         this.peas.push([i, t]);
                         this.cool_down[i] = t + 2.5;
@@ -495,11 +692,13 @@ export class Plantbie extends Scene {
             if(collision_detection(pea_cords, zombie_cords)){
                 // console.log("here!");
                 this.peas.splice(i, 1);
+                i--;
             }else{
                 if (dt < 8) {
                     this.render_pea(context, program_state, pos[0] + dt * 2.5 - 8, pos[1], pos[2] - 4);
                 } else {
                     this.peas.splice(i, 1);
+                    i--;
                 }
             }
 
