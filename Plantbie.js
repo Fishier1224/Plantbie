@@ -318,7 +318,7 @@ export class Plantbie extends Scene {
         this.shapes.watermelon_head.draw(context,program_state,plant_transform, this.materials.peashooter);
         let eye_transform=leaf_transform.times(Mat4.translation(0.2,1,1.3),);
         eye_transform = eye_transform.times(Mat4.scale(0.4,0.4,0.4));
-       this.shapes.watermelon_eyes.draw(context,program_state,eye_transform, this.materials.melon_eye);
+        this.shapes.watermelon_eyes.draw(context,program_state,eye_transform, this.materials.melon_eye);
         plant_transform=plant_transform.times(Mat4.translation(-0.5,1.3,-1.5),);
         const rot_factor = Math.sin(2*Math.PI*t)*0.1;
         plant_transform = plant_transform.times(Mat4.rotation(rot_factor, 1,0,0));
@@ -375,10 +375,10 @@ export class Plantbie extends Scene {
         this.key_triggered_button("Prev Plant", ["ArrowRight"], () => this.buffer_index = Math.min(0, this.buffer_index+1));
         this.new_line();
         this.key_triggered_button("Plant", ["Enter"], () => {
-            let temp = this.grid_index[0] * 9 + this.grid_index[1];
-            this.plant_here[temp] = 1; // here we should change the value to same as the buffer, which will have a int value to represent the type of plant stored in this buffer.
-            // for now, 1 stands for peashooters.
-            this.cool_down[temp] = 0;
+                let temp = this.grid_index[0] * 9 + this.grid_index[1];
+                this.plant_here[temp] = 1; // here we should change the value to same as the buffer, which will have a int value to represent the type of plant stored in this buffer.
+                // for now, 1 stands for peashooters.
+                this.cool_down[temp] = 0;
             }
         );// need to insert into array of plants;
         this.key_triggered_button("Remove Plant", ["Escape"], () => this.grass_grid.set(this.grid_index, this.current_empty));// need to remove from array of plants
@@ -445,7 +445,7 @@ export class Plantbie extends Scene {
             if (this.userdraw == "nest"){
                 this.nest_count += 1;
                 let transform = Mat4.translation(pos_world_far[0], pos_world_far[1], pos_world_far[2])
-                                    .times(Mat4.scale(obj_scale, obj_scale, obj_scale, 0));
+                    .times(Mat4.scale(obj_scale, obj_scale, obj_scale, 0));
                 this.nest_location.push(transform.times(Mat4.scale(0.6,0.6,0.6,0)));
             }
 
@@ -463,20 +463,20 @@ export class Plantbie extends Scene {
     draw_menu_bar(context, program_state, model_transform, t){
         // draw menu platform at top of viewport (wood texture)
         let menubar_trans = model_transform.times(Mat4.translation(-26.4, 21, 0, 0))
-                                                      .times(Mat4.scale(50, 2, 0, 0))
+            .times(Mat4.scale(50, 2, 0, 0))
         this.shapes.square.draw(context, program_state, menubar_trans, this.materials.menu);
 
         // draw item 1: floral coral
         var item1_background_trans = model_transform.times(Mat4.translation(-23.5, 20.8, 0, 0))
-                                                    .times(Mat4.scale(1.4, 1.4, .5, 0));
+            .times(Mat4.scale(1.4, 1.4, .5, 0));
 
         let item1_trans = item1_background_trans.times(Mat4.translation(0.5, -0.25, 2, 0))
-                                                .times(Mat4.scale(0.38, 0.38, 1, 0))
-                                                .times(Mat4.rotation(-43.7, 0, 0, 1));
+            .times(Mat4.scale(0.38, 0.38, 1, 0))
+            .times(Mat4.rotation(-43.7, 0, 0, 1));
         this.shapes.coral1.draw(context, program_state, item1_trans, this.materials.coral.override({color:hex_color("#e691bc")}));
 
         let item1_price_trans = model_transform.times(Mat4.translation(-26.1, 20.3, 1, 0))
-                                               .times(Mat4.scale(0.75, 0.75, 1, 0))
+            .times(Mat4.scale(0.75, 0.75, 1, 0))
         var price1 = 2;
         this.shapes.text.set_string("$"+ price1.toString(), context.context);
         this.shapes.text.draw(context, program_state, item1_price_trans, this.materials.text_image);
@@ -503,14 +503,14 @@ export class Plantbie extends Scene {
 
         // draw item 2: rock
         let item2_background_trans = model_transform.times(Mat4.translation(-18.3, 20.8, 0, 0))
-                                        .times(Mat4.scale(1.4, 1.4, .5, 0))
+            .times(Mat4.scale(1.4, 1.4, .5, 0))
 
         let item2_trans = item2_background_trans.times(Mat4.translation(0.3, -0.25, 2, 0))
-                                                .times(Mat4.scale(0.65, 0.65, 1, 0));
+            .times(Mat4.scale(0.65, 0.65, 1, 0));
         this.shapes.rock.draw(context, program_state, item2_trans, this.materials.rock);
 
         let item2_price_trans = model_transform.times(Mat4.translation(-21, 20.3, 1, 0))
-                                               .times(Mat4.scale(0.75, 0.75, 1, 0))
+            .times(Mat4.scale(0.75, 0.75, 1, 0))
         var price2 = 1;
         this.shapes.text.set_string("$"+ price2.toString(), context.context);
         this.shapes.text.draw(context, program_state, item2_price_trans, this.materials.text_image);
@@ -539,14 +539,14 @@ export class Plantbie extends Scene {
 
         // draw item 3: spiky coral
         let item3_background_trans = model_transform.times(Mat4.translation(-13, 20.8, 0, 0))
-                                                        .times(Mat4.scale(1.4, 1.4, .5, 0));
+            .times(Mat4.scale(1.4, 1.4, .5, 0));
 
         let item3_trans = item3_background_trans.times(Mat4.translation(0.2, -0.25, 2, 0))
-                                                    .times(Mat4.scale(0.5, 0.47, 1, 0));
+            .times(Mat4.scale(0.5, 0.47, 1, 0));
         this.shapes.coral2.draw(context, program_state, item3_trans, this.materials.coral.override({color: hex_color("#f59f49")}));
 
         let item3_price_trans = model_transform.times(Mat4.translation(-16, 20.3, 1, 0))
-                                               .times(Mat4.scale(0.75, 0.75, 1, 0))
+            .times(Mat4.scale(0.75, 0.75, 1, 0))
         var price3 = 3;
         this.shapes.text.set_string("$"+ price3.toString(), context.context);
         this.shapes.text.draw(context, program_state, item3_price_trans, this.materials.text_image);
@@ -572,14 +572,14 @@ export class Plantbie extends Scene {
 
         // draw item 4: golden squid
         let item4_background_trans = model_transform.times(Mat4.translation(-6.5, 20.8, 0, 0))
-                                                    .times(Mat4.scale(1.4, 1.4, .5, 0));
+            .times(Mat4.scale(1.4, 1.4, .5, 0));
 
         let item4_trans = item4_background_trans.times(Mat4.translation(0.1, -0.25, 2, 0))
-                                                .times(Mat4.scale(.7, .33, 1, 0))
+            .times(Mat4.scale(.7, .33, 1, 0))
         this.shapes.squid.draw(context, program_state, item4_trans, this.materials.gold);
 
         let item4_price_trans = model_transform.times(Mat4.translation(-10.8, 20.3, 1, 0))
-                                               .times(Mat4.scale(0.75, 0.75, 1, 0))
+            .times(Mat4.scale(0.75, 0.75, 1, 0))
         var price4 = 15;
         this.shapes.text.set_string("$"+ price4.toString(), context.context);
         this.shapes.text.draw(context, program_state, item4_price_trans, this.materials.text_image);
@@ -606,14 +606,14 @@ export class Plantbie extends Scene {
 
         // draw item 5: starfish
         let item5_background_trans = model_transform.times(Mat4.translation(-1.5, 20.8, 0, 0))
-                                                    .times(Mat4.scale(1.4, 1.4, .5, 0));
+            .times(Mat4.scale(1.4, 1.4, .5, 0));
 
         let item5_trans = item5_background_trans.times(Mat4.translation(-0.1, -0.25, 2, 0))
-                                                .times(Mat4.scale(.5, .5, 1, 0))
+            .times(Mat4.scale(.5, .5, 1, 0))
         this.shapes.starfish.draw(context, program_state, item5_trans, this.materials.coral.override({color: hex_color("#ff892e")}));
 
         let item5_price_trans = model_transform.times(Mat4.translation(-4.7, 20.3, 1, 0))
-                                               .times(Mat4.scale(0.75, 0.75, 1, 0))
+            .times(Mat4.scale(0.75, 0.75, 1, 0))
         var price5 = 5;
         this.shapes.text.set_string("$"+ price5.toString(), context.context);
         this.shapes.text.draw(context, program_state, item5_price_trans, this.materials.text_image);
@@ -638,14 +638,14 @@ export class Plantbie extends Scene {
         }
         // draw item 6: seashell
         let item6_background_trans = model_transform.times(Mat4.translation(4, 20.8, 0, 0))
-                                                    .times(Mat4.scale(1.4, 1.4, .5, 0));
+            .times(Mat4.scale(1.4, 1.4, .5, 0));
 
         let item6_trans = item6_background_trans.times(Mat4.translation(0.2, -0.25, 2, 0))
-                                                .times(Mat4.scale(.4, .4, 1, 0))
+            .times(Mat4.scale(.4, .4, 1, 0))
         this.shapes.seashell.draw(context, program_state, item6_trans, this.materials.coral.override({color: hex_color("#f5988e")}));
 
         let item6_price_trans = model_transform.times(Mat4.translation(0.3, 20.3, 1, 0))
-                                               .times(Mat4.scale(0.75, 0.75, 1, 0))
+            .times(Mat4.scale(0.75, 0.75, 1, 0))
         var price6 = 4;
         this.shapes.text.set_string("$"+ price6.toString(), context.context);
         this.shapes.text.draw(context, program_state, item6_price_trans, this.materials.text_image);
@@ -671,16 +671,16 @@ export class Plantbie extends Scene {
 
         // draw item 7: jellyfish
         let item7_background_trans = model_transform.times(Mat4.translation(9.2, 20.8, 0, 0))
-                                                    .times(Mat4.scale(1.4, 1.4, .5, 0));
+            .times(Mat4.scale(1.4, 1.4, .5, 0));
 
         let item7_trans = item7_background_trans.times(Mat4.translation(-.35, -0.4, 2, 0))
-                                                .times(Mat4.scale(.4, .35, 1, 0))
-                                                .times(Mat4.rotation(-33, 1, 0, 0))
-                                                .times(Mat4.rotation(-66, 0, 1, 0));
+            .times(Mat4.scale(.4, .35, 1, 0))
+            .times(Mat4.rotation(-33, 1, 0, 0))
+            .times(Mat4.rotation(-66, 0, 1, 0));
         this.shapes.jellyfish.draw(context, program_state, item7_trans, this.materials.coral.override({color: hex_color("#6ee7f0")}));
 
         let item7_price_trans = model_transform.times(Mat4.translation(5.7, 20.3, 1, 0))
-                                               .times(Mat4.scale(0.75, 0.75, 1, 0))
+            .times(Mat4.scale(0.75, 0.75, 1, 0))
         var price7 = 7;
         this.shapes.text.set_string("$"+ price7.toString(), context.context);
         this.shapes.text.draw(context, program_state, item7_price_trans, this.materials.text_image);
@@ -706,30 +706,30 @@ export class Plantbie extends Scene {
 
         // draw item 8: nest
         let item8_background_trans = model_transform.times(Mat4.translation(15.5, 20.8, 0, 0))
-                                                    .times(Mat4.scale(1.4, 1.4, .5, 0));
+            .times(Mat4.scale(1.4, 1.4, .5, 0));
 
         let item8_trans = item8_background_trans.times(Mat4.translation(-.35, -0.1, 2, 0))
-                                                .times(Mat4.scale(0.6, 0.6, 0.6, 0));
+            .times(Mat4.scale(0.6, 0.6, 0.6, 0));
         this.shapes.nest.draw(context, program_state, item8_trans, this.materials.coral.override({color:hex_color("#7a5038")}));
 
         let egg1 = item8_trans.times(Mat4.scale(0.45,0.75,0.6,0))
-                            .times(Mat4.translation(-0.8,0.2,0,0));
+            .times(Mat4.translation(-0.8,0.2,0,0));
         this.shapes.sphere.draw(context, program_state, egg1, this.materials.egg);
         let egg2 = item8_trans.times(Mat4.scale(0.4,0.7,0.6,0))
-                            .times(Mat4.translation(-1.5,0,-0.5,0))
-                            .times(Mat4.rotation(-10,1,1,1));
+            .times(Mat4.translation(-1.5,0,-0.5,0))
+            .times(Mat4.rotation(-10,1,1,1));
         this.shapes.sphere.draw(context, program_state, egg2, this.materials.egg);
         let egg3 = item8_trans.times(Mat4.scale(0.4,0.78,0.6,0))
-                            .times(Mat4.translation(0,0,-0.6,0))
-                            .times(Mat4.rotation(-10,1,1,1));
+            .times(Mat4.translation(0,0,-0.6,0))
+            .times(Mat4.rotation(-10,1,1,1));
         this.shapes.sphere.draw(context, program_state, egg3, this.materials.egg);
         let egg4 = item8_trans.times(Mat4.scale(0.5,0.4,0.6,0))
-                            .times(Mat4.translation(1,0.7,1,0))
-                            .times(Mat4.rotation(-10,1,1,1));
+            .times(Mat4.translation(1,0.7,1,0))
+            .times(Mat4.rotation(-10,1,1,1));
         this.shapes.sphere.draw(context, program_state, egg4, this.materials.egg);
 
         let item8_price_trans = model_transform.times(Mat4.translation(10.5, 20.3, 1, 0))
-                                               .times(Mat4.scale(0.75, 0.75, 1, 0))
+            .times(Mat4.scale(0.75, 0.75, 1, 0))
         var price8 = 12;
         this.shapes.text.set_string("$"+ price8.toString(), context.context);
         this.shapes.text.draw(context, program_state, item8_price_trans, this.materials.text_image);
@@ -803,66 +803,66 @@ export class Plantbie extends Scene {
         const time_loading_screen_end = 9;
         this.game_sound.play();
 
-            //let loading_transform = Mat4.identity().times(Mat4.translation(-7.5,13,11,0)).times(Mat4.scale(1.2,1.2,0.2,5));
-            //this.shapes.text.set_string("loading...", context.context);
-            //this.shapes.text.draw(context, program_state, loading_transform.times(Mat4.scale(.35, .35, .50)), this.materials.text_image);
-            /*if (time_in_sec > time_loading_screen && time_in_sec < time_loading_screen_end) {
-                let model_transform = Mat4.identity();
-                this.loading_sound.play();
-                console.log("hi")
-                this.shapes.square.draw(context, program_state, model_transform.times(Mat4.translation(-5,9,10,0)).times(Mat4.scale(15, 10, 1)),this.materials.square);
+        //let loading_transform = Mat4.identity().times(Mat4.translation(-7.5,13,11,0)).times(Mat4.scale(1.2,1.2,0.2,5));
+        //this.shapes.text.set_string("loading...", context.context);
+        //this.shapes.text.draw(context, program_state, loading_transform.times(Mat4.scale(.35, .35, .50)), this.materials.text_image);
+        /*if (time_in_sec > time_loading_screen && time_in_sec < time_loading_screen_end) {
+            let model_transform = Mat4.identity();
+            this.loading_sound.play();
+            console.log("hi")
+            this.shapes.square.draw(context, program_state, model_transform.times(Mat4.translation(-5,9,10,0)).times(Mat4.scale(15, 10, 1)),this.materials.square);
 
-                    let loading_transform = Mat4.identity().times(Mat4.translation(-7.5,13,11,0)).times(Mat4.scale(1.2,1.2,0.2,5));
-                    this.shapes.text.set_string("loading...", context.context);
-                    this.shapes.text.draw(context, program_state, loading_transform.times(Mat4.scale(.35, .35, .50)), this.materials.text_image);
+                let loading_transform = Mat4.identity().times(Mat4.translation(-7.5,13,11,0)).times(Mat4.scale(1.2,1.2,0.2,5));
+                this.shapes.text.set_string("loading...", context.context);
+                this.shapes.text.draw(context, program_state, loading_transform.times(Mat4.scale(.35, .35, .50)), this.materials.text_image);
 
-                    let max_angle = .1 * Math.PI;
+                let max_angle = .1 * Math.PI;
 
-                    const time_in_sec = t/1000;
-                    const time_fish1 = 3;
+                const time_in_sec = t/1000;
+                const time_fish1 = 3;
 
-                    if (time_in_sec > time_fish1) {
-                        let fish1_trans = model_transform.times(Mat4.translation(-15, 10, 11))
+                if (time_in_sec > time_fish1) {
+                    let fish1_trans = model_transform.times(Mat4.translation(-15, 10, 11))
+                                              .times(Mat4.scale(0.8,0.6,0.5,1));
+                    this.shapes.peashooter.draw(context, program_state, fish1_trans, this.materials.peashooter);
+                }
+
+                const time_fish2 = 4;
+
+                if (time_in_sec > time_fish2) {
+                    let fish2_trans = model_transform.times(Mat4.translation(-10, 10, 11))
                                                   .times(Mat4.scale(0.8,0.6,0.5,1));
-                        this.shapes.peashooter.draw(context, program_state, fish1_trans, this.materials.peashooter);
-                    }
+                    this.shapes.peashooter.draw(context, program_state, fish2_trans, this.materials.peashooter);
+                }
 
-                    const time_fish2 = 4;
+                const time_fish3 = 5;
 
-                    if (time_in_sec > time_fish2) {
-                        let fish2_trans = model_transform.times(Mat4.translation(-10, 10, 11))
-                                                      .times(Mat4.scale(0.8,0.6,0.5,1));
-                        this.shapes.peashooter.draw(context, program_state, fish2_trans, this.materials.peashooter);
-                    }
+                if (time_in_sec > time_fish3) {
 
-                    const time_fish3 = 5;
+                    let fish3_trans = model_transform.times(Mat4.translation(-5, 10, 11))
+                                                  .times(Mat4.scale(0.8,0.6,0.5,1));
+                    this.shapes.peashooter.draw(context, program_state, fish3_trans, this.materials.peashooter);
+                }
 
-                    if (time_in_sec > time_fish3) {
+                const time_fish4 = 6;
 
-                        let fish3_trans = model_transform.times(Mat4.translation(-5, 10, 11))
-                                                      .times(Mat4.scale(0.8,0.6,0.5,1));
-                        this.shapes.peashooter.draw(context, program_state, fish3_trans, this.materials.peashooter);
-                    }
+                if (time_in_sec > time_fish4) {
 
-                    const time_fish4 = 6;
+                    let fish4_trans = model_transform.times(Mat4.translation(0, 10, 11))
+                                                  .times(Mat4.scale(0.8,0.6,0.5,1));
+                    this.shapes.peashooter.draw(context, program_state, fish4_trans, this.materials.peashooter);
+                }
 
-                    if (time_in_sec > time_fish4) {
+                const time_fish5 = 7;
 
-                        let fish4_trans = model_transform.times(Mat4.translation(0, 10, 11))
-                                                      .times(Mat4.scale(0.8,0.6,0.5,1));
-                        this.shapes.peashooter.draw(context, program_state, fish4_trans, this.materials.peashooter);
-                    }
+                if (time_in_sec > time_fish5) {
+                    let fish5_trans = model_transform.times(Mat4.translation(5.0, 10, 11))
+                                                 .times(Mat4.scale(0.8,0.6,0.5,1));
 
-                    const time_fish5 = 7;
-
-                    if (time_in_sec > time_fish5) {
-                        let fish5_trans = model_transform.times(Mat4.translation(5.0, 10, 11))
-                                                     .times(Mat4.scale(0.8,0.6,0.5,1));
-
-                        this.shapes.peashooter.draw(context, program_state, fish5_trans, this.materials.peashooter);
-                    }
-                } // end of loading screen
-        */
+                    this.shapes.peashooter.draw(context, program_state, fish5_trans, this.materials.peashooter);
+                }
+            } // end of loading screen
+    */
         //this.loading_sound.play();
         if(this.change_view){
             program_state.set_camera(this.initial_camera_location);
@@ -883,7 +883,7 @@ export class Plantbie extends Scene {
         program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
 
         let plant_transform = Mat4.identity()
-                .times(Mat4.translation(0, 1, 0));
+            .times(Mat4.translation(0, 1, 0));
         // this.shapes.peashooter.draw(context, program_state, plant_transform, this.materials.peashooter);
 
         // this.render_peashooter(context,program_state,8,0.05,4,t);
@@ -969,10 +969,10 @@ export class Plantbie extends Scene {
 
         // Position the sun
         let model_transform = Mat4.identity()
-                .times(Mat4.translation(10, 7, -2));
+            .times(Mat4.translation(10, 7, -2));
         this.shapes.sun.draw(context, program_state, model_transform, this.materials.sun);
         let headstone_transform = Mat4.identity()
-                .times(Mat4.translation(10, 0, -2));
+            .times(Mat4.translation(10, 0, -2));
         this.shapes.headstone.draw(context, program_state, headstone_transform, this.materials.headstone);
 
 
@@ -1016,22 +1016,22 @@ export class Plantbie extends Scene {
         this.shapes.ground.draw(context, program_state, ground_placement, this.materials.ground);
 
         //this.draw_menu_bar(context, program_state, model_transform, t / 1000);
-/*        // Draw the peashooters in the plant array
-        for (const plant of this.plants) {
-            let plant_transform = Mat4.identity()
-                .times(Mat4.translation(plant[1] * 2 - 4, 0, plant[0] * 2 - 4));
-            this.shapes.peashooter.draw(context, program_state, plant_transform, this.materials.peashooter);
-        }
+        /*        // Draw the peashooters in the plant array
+                for (const plant of this.plants) {
+                    let plant_transform = Mat4.identity()
+                        .times(Mat4.translation(plant[1] * 2 - 4, 0, plant[0] * 2 - 4));
+                    this.shapes.peashooter.draw(context, program_state, plant_transform, this.materials.peashooter);
+                }
 
-        // Draw the selected peashooter at the current grid position
-        if (this.starting) {
-            let selected_transform = Mat4.identity()
-                .times(Mat4.translation(this.grid_index[1] * 2 - 4, 0, this.grid_index[0] * 2 - 4))
-                .times(Mat4.scale(1.1, 1.1, 1.1));
-            this.shapes.peashooter.draw(context, program_state, selected_transform, this.materials.peashooter.override({color: hex_color("#FF0000")}));
-        }
+                // Draw the selected peashooter at the current grid position
+                if (this.starting) {
+                    let selected_transform = Mat4.identity()
+                        .times(Mat4.translation(this.grid_index[1] * 2 - 4, 0, this.grid_index[0] * 2 - 4))
+                        .times(Mat4.scale(1.1, 1.1, 1.1));
+                    this.shapes.peashooter.draw(context, program_state, selected_transform, this.materials.peashooter.override({color: hex_color("#FF0000")}));
+                }
 
- */
+         */
     }
 }
 
