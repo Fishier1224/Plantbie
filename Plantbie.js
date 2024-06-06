@@ -72,17 +72,21 @@ class Square extends Shape {
     }
 }
 
-class Cloud extends Shape {
+class FullScreenQuad extends Shape {
     constructor() {
-        super("position", "texture_coord");
-        // Define a simple quad for the cloud
+        super("position", "normal", "texture_coord");
         this.arrays.position = Vector3.cast(
-            [-1, 0, -1], [1, 0, -1], [1, 0, 1], [-1, 0, 1]
+            [-1, -1, 0], [1, -1, 0], [-1, 1, 0],
+            [-1, 1, 0], [1, -1, 0], [1, 1, 0]
+        );
+        this.arrays.normal = Vector3.cast(
+            [0, 0, 1], [0, 0, 1], [0, 0, 1],
+            [0, 0, 1], [0, 0, 1], [0, 0, 1]
         );
         this.arrays.texture_coord = Vector.cast(
-            [0, 0], [1, 0], [1, 1], [0, 1]
+            [0, 0], [1, 0], [0, 1],
+            [0, 1], [1, 0], [1, 1]
         );
-        this.indices = [0, 1, 2, 0, 2, 3];
     }
 }
 
@@ -130,6 +134,7 @@ export class Plantbie extends Scene {
             square: new Square(),
             sun: new Shape_From_File("./assets/sphere.obj"),
             buffer: new defs.Cube(),
+            game_end: new Cube(),
             test: new Cube(),
             cloud: new Shape_From_File("./assets/cloud.obj"),
             sky: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(4),
@@ -209,6 +214,12 @@ export class Plantbie extends Scene {
                 color: hex_color("#006400"),
                 texture: new Texture("assets/grass.png"),
             }),
+            game_end: new Material(
+                new defs.Fake_Bump_Map(1), {
+                    color: hex_color("#000000"),
+                    ambient: 1, diffusivity: 0.1, specularity: 0.1,
+                    texture: new Texture("assets/game_over.png"),
+                }),
             outlined_square: new Material(new defs.Phong_Shader(), { // Material for outline
                 ambient: 0.5,
                 diffusivity: 0.5,
@@ -587,7 +598,19 @@ export class Plantbie extends Scene {
 
         if(this.game_end === true){
             console.log("game end!")
+            let game_end = Mat4.identity()
+                .times(Mat4.translation(0, 1.7, 1.2))
+                .times(Mat4.translation(0, 0, 0))
+                .times(Mat4.scale(7, 4.5, 6))
+            this.shapes.game_end.draw(context, program_state, game_end, this.materials.game_end);
+            //program_state.set_camera(this.initial_camera_location);
+
         }
+
+        // let matrix_transform = Mat4.identity();
+        // this.shapes.square.draw(context, program_state, matrix_transform.times(Mat4.translation(0, 10, 0))
+        //         .times(Mat4.rotation(Math.PI / 2 * 3, 0, 1, 0))
+        //         .times(Mat4.scale(28, 28, 1)), this.materials.game_end);
 
         const types = ["flag", "bucket", "conehead"]
         if(t >= this.zombie_count_down){
@@ -818,14 +841,6 @@ export class Plantbie extends Scene {
             }
         }
 
-        let test = Mat4.identity()
-            .times(Mat4.translation(0, 1.7, 1.2))
-            .times(Mat4.translation(0, 6.5, -4)) // Floating up and down
-            .times(Mat4.scale(2, 2, 2))
-        //this.shapes.test.draw(context, program_state, test, this.materials.test);
-        // let box2_transform = model_transform;
-        // box2_transform = Mat4.translation(2,0,0).times(Mat4.rotation(this.time*2*30/60*Math.PI,0,1,0));
-        // this.shapes.test.draw(context,program_state,box2_transform,this.materials.test);
 
         // Position the clouds
         let cloud_transform = Mat4.identity()
