@@ -8,6 +8,8 @@ const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Matrix, Mat4, Light, Shape, Shader, Texture, Material, Scene,
 } = tiny;
 
+const {Cube, Axis_Arrows, Textured_Phong} = defs
+
 //inclusive
 function getRandomInt(min, max) {
     min = Math.ceil(min);
@@ -128,6 +130,7 @@ export class Plantbie extends Scene {
             square: new Square(),
             sun: new Shape_From_File("./assets/sphere.obj"),
             buffer: new defs.Cube(),
+            test: new Cube(),
             cloud: new Shape_From_File("./assets/cloud.obj"),
             sky: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(4),
             ground: new defs.Square(),
@@ -163,6 +166,7 @@ export class Plantbie extends Scene {
             //cloud: new Cloud(),
             //outlined_square: new Outlined_Square(),
         };
+        //this.shapes.test.arrays.texture_coord = this.shapes.test.arrays.texture_coord.map(x => x.times(2));
 
         const textured = new defs.Textured_Phong();
         const texture = new defs.Textured_Phong(1);
@@ -198,11 +202,12 @@ export class Plantbie extends Scene {
                 specularity: 1,
                 color: hex_color("#FFFFFF")
             }),
-            square: new Material(new defs.Phong_Shader(), {
+            square: new Material(new defs.Fake_Bump_Map(), {
                 ambient: 1,
-                diffusivity: 1,
-                specularity: 1,
-                color: hex_color("#006400")
+                //diffusivity: 1,
+                //specularity: 1,
+                color: hex_color("#006400"),
+                texture: new Texture("assets/grass.png"),
             }),
             outlined_square: new Material(new defs.Phong_Shader(), { // Material for outline
                 ambient: 0.5,
@@ -210,11 +215,12 @@ export class Plantbie extends Scene {
                 specularity: 0.05,
                 color: hex_color("#002800")
             }),
-            sun: new Material(new defs.Phong_Shader(), {
-                ambient: 0.5,
-                diffusivity: 0.5,
-                specularity: 0.05,
-                color: hex_color("#FFD700")  // Bright yellow for the sun
+            sun: new Material(new defs.Phong_Shader(),{
+                ambient: 1,
+                //diffusivity: 0,
+                //specularity: 0,
+                color: hex_color("#FFD700"),
+                //texture: new Texture("assets/Day_bg.png"), // Bright yellow for the sun
             }),
             headstone: new Material(new defs.Phong_Shader(), {
                 ambient: 1,
@@ -222,11 +228,17 @@ export class Plantbie extends Scene {
                 specularity: 1,
                 color: hex_color("#000000")
             }),
-            buffer: new Material(new defs.Phong_Shader(), {
+            buffer: new Material(new defs.Fake_Bump_Map(), {
                 color: hex_color("#000000"),
                 ambient: 0.5,
                 diffusivity: 0.5,
                 specularity: 0.05,
+                texture: new Texture("assets/brick.png"),
+            }),
+            test: new Material(new defs.Fake_Bump_Map(), {
+                color: hex_color("#000000"),
+                ambient: 1,
+                texture: new Texture("assets/Day_bg.png"),
             }),
             buffer_highlight: new Material(new defs.Phong_Shader(), {
                 color: hex_color("#FFD700"),
@@ -508,11 +520,13 @@ export class Plantbie extends Scene {
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
         this.key_triggered_button("Start Game", ["s"], () => this.starting = !this.starting);
         this.new_line();
+        this.new_line();
         this.key_triggered_button("select row one", ["1"], () => this.grid_index[0] = 0);
         this.key_triggered_button("select row two", ["2"], () => this.grid_index[0] = 1);
         this.key_triggered_button("select row three", ["3"], () => this.grid_index[0] = 2);
         this.key_triggered_button("select row four", ["4"], () => this.grid_index[0] = 3);
         this.key_triggered_button("select row five", ["5"], () => this.grid_index[0] = 4);
+        this.new_line();
         this.new_line();
         this.key_triggered_button("select column one", ["q"], () => this.grid_index[1] = 0);
         this.key_triggered_button("select column two", ["w"], () => this.grid_index[1] = 1);
@@ -523,6 +537,7 @@ export class Plantbie extends Scene {
         this.key_triggered_button("select column seven", ["u"], () => this.grid_index[1] = 6);
         this.key_triggered_button("select column eight", ["i"], () => this.grid_index[1] = 7);
         this.key_triggered_button("select column nine", ["o"], () => this.grid_index[1] = 8);
+        this.new_line();
         this.new_line();
 
         this.key_triggered_button("Buffer Move Left", ["ArrowLeft"], () => this.buffer_index = Math.max(0, this.buffer_index - 1));
@@ -710,7 +725,7 @@ export class Plantbie extends Scene {
 
             // Draw the outline
             let outline_transform = square_transform.times(Mat4.scale(1.3, 1.3, 1.3)); // Slightly larger for outline
-            this.shapes.square.draw(context, program_state, outline_transform, this.materials.outlined_square);
+            //this.shapes.square.draw(context, program_state, outline_transform, this.materials.outlined_square);
         }
 
         // this.shapes.test_rec.draw(context, program_state, Mat4.identity(), this.materials.vertical_rectangle);
@@ -752,7 +767,7 @@ export class Plantbie extends Scene {
         this.shapes.sun.draw(context, program_state, model_transform, this.materials.sun);
         let headstone_transform = Mat4.identity()
             .times(Mat4.translation(10, 0, -2));
-        this.shapes.headstone.draw(context, program_state, headstone_transform, this.materials.headstone);
+        //this.shapes.headstone.draw(context, program_state, headstone_transform, this.materials.headstone);
 
         let peashooter = "pea";
         let watermelon = "melon";
@@ -803,7 +818,14 @@ export class Plantbie extends Scene {
             }
         }
 
-
+        let test = Mat4.identity()
+            .times(Mat4.translation(0, 1.7, 1.2))
+            .times(Mat4.translation(0, 6.5, -4)) // Floating up and down
+            .times(Mat4.scale(2, 2, 2))
+        //this.shapes.test.draw(context, program_state, test, this.materials.test);
+        // let box2_transform = model_transform;
+        // box2_transform = Mat4.translation(2,0,0).times(Mat4.rotation(this.time*2*30/60*Math.PI,0,1,0));
+        // this.shapes.test.draw(context,program_state,box2_transform,this.materials.test);
 
         // Position the clouds
         let cloud_transform = Mat4.identity()
@@ -856,6 +878,46 @@ export class Plantbie extends Scene {
          */
     }
 }
+
+class Texture_Scroll_X extends Textured_Phong {
+    // TODO:  Modify the shader below (right now it's just the same fragment shader as Textured_Phong) for requirement #6.
+    fragment_glsl_code() {
+        return this.shared_glsl_code() + `
+            varying vec2 f_tex_coord;
+            uniform sampler2D texture;
+            uniform float animation_time;
+
+            void main(){
+                float slide = mod(animation_time * 2.0, 4.0);
+                vec2 slide_f_tex_coord = vec2(f_tex_coord.x - slide, f_tex_coord.y);
+                vec4 tex_color = texture2D( texture, slide_f_tex_coord);
+                
+                if( tex_color.w < .01 ) discard;
+                float u = mod(slide_f_tex_coord.x, 1.0);
+                float v = mod(slide_f_tex_coord.y, 1.0);
+                 
+                if (v > 0.15 && v < 0.85 && u > 0.75 && u < 0.85){
+                    tex_color = vec4(0,0,0,1.0);
+                }
+                
+                if (v > 0.15 && v < 0.85 && u > 0.15 && u < 0.25){
+                    tex_color = vec4(0,0,0,1.0);
+                }
+                
+                if (u > 0.15 && u < 0.85 && v > 0.15 && v < 0.25){
+                    tex_color = vec4(0,0,0,1.0);
+                }
+                
+                if (u > 0.15 && u < 0.85 && v > 0.75 && v < 0.85){
+                    tex_color = vec4(0,0,0,1.0);
+                }
+                
+                gl_FragColor = vec4( ( tex_color.xyz + shape_color.xyz ) * ambient, shape_color.w * tex_color.w );
+                gl_FragColor.xyz += phong_model_lights( normalize( N ), vertex_worldspace );
+        } `;
+    }
+}
+
 
 
 class Gouraud_Shader extends Shader {
@@ -1086,6 +1148,4 @@ function collision_detection(bullet_cords, zombie_cords) {
         }
     }
 }
-
-
 
