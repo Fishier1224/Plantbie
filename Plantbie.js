@@ -649,6 +649,8 @@ export class Plantbie extends Scene {
                     }
                     else if(this.buf_plants[this.buffer_index] === 2){  //melon
                         this.plant_here[temp][1] = 800
+                        //a melon dies when this reaches 5, and gains one whenever push a bullet
+                        this.plant_here[temp].counter = 0;
                     }
                     else if(this.buf_plants[this.buffer_index] === 3){  //wallnut
                         this.plant_here[temp][1] = 4000
@@ -902,13 +904,13 @@ export class Plantbie extends Scene {
                 console.log(cen[0], cen[1], cen[2]);
 
                 if(collision_detection(pea_cords, zombie_cords)){
-                    console.log("zombie hit");
+                    console.log("zombie hit by a FUCKING MELON");
                     console.log(this.melons);
                     console.log(pea_cords);
                     console.log(zombie_cords);
                     this.melons.splice(j, 1);
                     // i--;
-                    curZombie.health -= 200;
+                    curZombie.health -= 9999999;
                     this.zombies[i][0] = curZombie;
                     console.log(this.melons);
                     console.log(curZombie)
@@ -945,10 +947,15 @@ export class Plantbie extends Scene {
                     }
                 }
                 else if(this.plant_here[i][0] === 2){
+                    //if a melon is planted here, it will shoot five times, and then die
                     this.render_watermelon(context, program_state, pos[0], pos[1], pos[2], t);
                     if((t - this.cool_down[i]) > 0 && (t - this.cool_down[i]) < 0.1){
                         this.melons.push([i, t]);
                         this.cool_down[i] = t + 2.5;
+                        this.plant_here[i].counter ++;
+                    }
+                    if(this.plant_here[i].counter===5) {
+                        this.plant_here[i][0] = 0;
                     }
                 }
                 else if(this.plant_here[i][0] === 3){
