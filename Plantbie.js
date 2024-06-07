@@ -350,6 +350,7 @@ export class Plantbie extends Scene {
             this.plant_here.push([0, 1]);
         }
         this.cool_down = new Array(45).fill(-1);
+        this.startattack = new Array(45).fill(false);
 
         this.peas = []
         this.melons = []
@@ -922,11 +923,11 @@ export class Plantbie extends Scene {
         //---------rendering zombies finished
 
 
-        for(let i=0; i<this.cool_down.length; i++){
-            if(this.cool_down[i] === 0){
-                this.cool_down[i] = t;
-            }
-        }
+        // for(let i=0; i<this.cool_down.length; i++){
+        //     // if(this.cool_down[i] === 0){
+        //     //     this.cool_down[i] = t;
+        //     // }
+        // }
 
         const ind = this.grid_index[0] * 9 + this.grid_index[1];
         for (let i=0; i<this.grid_positions.length; i++) {
@@ -938,23 +939,51 @@ export class Plantbie extends Scene {
             if(this.plant_here[i][0] !== 0){
                 if(this.plant_here[i][0] === 1){
                     // console.log(i)
-
+                    let curpos = this.grid_positions[i];
+                    let curmin = 100;
+                    for(let i=0; i<this.zombies.length; ++i){
+                        //on the same row
+                        if(this.zombies[i][0].base[2] === curpos[2]){
+                            //base[0] = 2(x-1) where x is column number of zombie from 1-9
+                            curmin = Math.min(curmin,this.zombies[i][0].base[0]);
+                        }
+                    }
                     this.render_peashooter(context, program_state, pos[0], pos[1], pos[2], t);
-                    if((t - this.cool_down[i]) > 0 && (t - this.cool_down[i]) < 0.1){
+                    if(((t - this.cool_down[i]) > 0 && (t - this.cool_down[i]) < 0.1) || this.startattack[i]){
+                        if(this.startattack[i]){this.startattack[i] = false;}
                         this.peas.push([i, t]);
 
                         this.cool_down[i] = t + 2.5;
                     }
+                    if(curmin !== 100 && this.cool_down[i]===0) {this.startattack[i] = true;}
+                    if(curmin === 100) {this.startattack[i] = false; this.cool_down[i]=0;}
                 }
                 else if(this.plant_here[i][0] === 2){
                     //if a melon is planted here, it will shoot five times, and then die
-                    this.render_watermelon(context, program_state, pos[0], pos[1], pos[2], t);
-                    if((t - this.cool_down[i]) > 0 && (t - this.cool_down[i]) < 0.1){
-                        this.melons.push([i, t]);
-                        this.cool_down[i] = t + 2.5;
-                        this.plant_here[i].counter ++;
+                    let curpos2 = this.grid_positions[i];
+                    let curmin2 = 100;
+                    for(let i=0; i<this.zombies.length; ++i){
+                        let x = this.zombies[i][0].base[0];
+                        let dt = t-this.zombies[i][0].birth_time - (this.zombies[i][3] * 0.8);
+                        let displacement = dt*this.zombies[i][0].speed[0]; //for now zombies can only run straight in x direction. Note that speed is always positive
+                        x = x - displacement;
+                        //on the same row
+                        if(this.zombies[i][0].base[2] === curpos2[2]){
+                            //base[0] = 2(x-1) where x is column number of zombie from 1-9
+                            curmin2 = Math.min(curmin2,x);
+                            console.log("registered zombie at lane " + (curpos2[2]/2+1) + "with x coordinate " + curmin2/2+1)
+                        }
                     }
-                    if(this.plant_here[i].counter===5) {
+                    this.render_watermelon(context, program_state, pos[0], pos[1], pos[2], t);
+                    if(((t - this.cool_down[i]) > 0 && (t - this.cool_down[i]) < 0.1) || this.startattack[i]){
+                        if(this.startattack[i]){this.startattack[i] = false;}
+                        this.melons.push([i, t, curmin2]);
+                        this.plant_here[i].counter++;
+                        this.cool_down[i] = t + 2.5;
+                    }
+                    if(curmin2 !== 100 && this.cool_down[i]===0) {this.startattack[i] = true;}
+                    if(curmin2 === 100) {this.startattack[i] = false; this.cool_down[i]=0;}
+                    if(this.plant_here[i].counter===3) {
                         this.plant_here[i][0] = 0;
                     }
                 }
@@ -1003,6 +1032,8 @@ export class Plantbie extends Scene {
         for(let i=0; i<this.melons.length; i++) {
             let ind = this.melons[i][0];
             let st = this.melons[i][1];
+            //this is 2(x-1) where x is the actual column number from 1-9
+            let min_zombie_x_at_load = this.melons[i][2];
             let pos = this.grid_positions[ind];
             let dt = (t - st);
             // let pea_center = [pos[0]+dt*2.5-8+0.2, pos[1]+1.13, pos[2]-4-0.1];
@@ -1011,7 +1042,26 @@ export class Plantbie extends Scene {
 
 
             if (dt < 8) {
-                this.render_melon(context, program_state, pos[0] + dt * 2.5 - 8-0.5, pos[1]+2-(dt-2)*(dt-2)+2*2.5, pos[2] - 4-0.1);
+                //pos[2] is 2*(z-1) where z is 1-5
+               //pos[2] is
+                //if this is -1, then melon don't shoot
+                // console.log("this is..." + min_zombie_x_at_load)
+                let distance = min_zombie_x_at_load - pos[0]; //this is in vector unit how much distance is between the two objects
+                let meeting_time = distance / (2.75);   //zombie speed is 0.25 unit/t, melon horizontal speed is 2.5. need to find a.b,c of parabola passing (meeting_time*2.5, 2.5), (pos[0],0)
+                let e = meeting_time*2.5;
+                let r = 0.5;
+                let q = pos[0];
+                let w = pos[1]+2;
+                let b = r - w - 0.1*q*q +0.1*e*e;
+                let temp = e-q;
+                b /= temp;
+                let c = w + 0.1*q * q - q*b;
+                // console.log("min_zombie_on_load:" + min_zombie_x_at_load);
+                // console.log("distance: " + distance);
+                // console.log("meeting_time: " + meeting_time);
+                // console.log (q + "," + w + "|" + e + "," + r);
+                // console.log("b/c:" + b + " " + c);
+                this.render_melon(context, program_state, pos[0] + dt * 2.5 - 8-0.5, -1*(dt-2)*(dt-2)+2*2.5, pos[2] - 4-0.1);
             } else {
                 console.log("here!" + this.melons);
                 this.melons.splice(i, 1);
