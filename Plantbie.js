@@ -124,9 +124,7 @@ export class Plantbie extends Scene {
         // Drawing queue for purchased items
         this.userdraw = "none";
         this.item_queue = [];
-        this.zombies = [];
-        this.game_end = false;
-        this.test = false; //testing variable
+
         this.prev_t = 0;
 
         // At the beginning of our program, load one of each of these shape definitions onto the GPU.
@@ -326,6 +324,9 @@ export class Plantbie extends Scene {
             }),
              */
         }
+        this.zombies = [];
+        this.game_end = false;
+        this.test = false; //testing variable
         this.starting = false;
         this.grid_index = [0, 0];
         this.buffer_index = 0;
@@ -557,7 +558,37 @@ export class Plantbie extends Scene {
 
     make_control_panel() {
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
-        this.key_triggered_button("Start Game", ["s"], () => this.starting = !this.starting);
+        this.key_triggered_button("Start Game", ["s"], () => {
+            if(this.game_end ){
+                this.game_end = !this.game_end;
+                this.zombies = [];
+                this.game_end = false;
+                this.test = false; //testing variable
+                this.starting = false;
+                this.grid_index = [0, 0];
+                this.buffer_index = 0;
+                this.current_planet = "default"
+                this.current_empty = "empty"
+                const grass_grid = new Map();
+
+                this.initial_camera_location = Mat4.look_at(vec3(0, 5, 15), vec3(0, 1.5, 1.5), vec3(0, 1.5, 1.5))
+                this.grid_positions = [];
+                this.change_view = false;
+                this.create_grid();
+                this.plant_here = [];
+                for(let i=0; i<45; i++){
+                    this.plant_here.push([0, 1]);
+                }
+                this.cool_down = new Array(45).fill(-1);
+
+                this.peas = []
+                this.buf_plants = [1,0,0,0,0,0,0,0,0,0];
+                this.zombie = []
+                this.plant_count_down = Math.floor(Math.random() * 5) + 12
+                this.zombie_count_down = Math.floor(Math.random() * 5) + 15
+            }
+        }
+        );
         this.new_line();
         this.new_line();
         this.key_triggered_button("select row one", ["1"], () => this.grid_index[0] = 0);
@@ -640,6 +671,7 @@ export class Plantbie extends Scene {
                 .times(Mat4.translation(0, 0, 0))
                 .times(Mat4.scale(7, 4.5, 6))
             this.shapes.game_end.draw(context, program_state, game_end, this.materials.game_end);
+
             //program_state.set_camera(this.initial_camera_location);
 
         }
