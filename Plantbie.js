@@ -808,7 +808,7 @@ export class Plantbie extends Scene {
                 console.log("stop moving and eat")
                 //problem: utilities & eating hands positions are affected by change / displacement in x for some reason
                 console.log("dt: " + dt + "displacement: " + displacement + "x:" + x);
-                this.zombies[i][0].base[0] = this.zombies[i][1];
+                //this.zombies[i][0].base[0] = this.zombies[i][1];
                 this.render_eating_zombie(context,program_state,this.zombies[i][1]-8,y,z-4,t,this.zombies[i][0].type);
 
 
