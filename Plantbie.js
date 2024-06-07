@@ -149,6 +149,7 @@ export class Plantbie extends Scene {
             watermelon_bullet: new Shape_From_File("./assets/melon_bullet.obj"),
             watermelon_head: new Shape_From_File("./assets/melon_head.obj"),
             watermelon_eyes: new Shape_From_File("./assets/melon_eye.obj"),
+            wallnut: new Shape_From_File("./assets/wallnut.obj"),
             text: new Text_Line(5),
             //zombie parts
             zombie_head: new Shape_From_File("./assets/zombie/zombie_head.obj"),
@@ -223,6 +224,12 @@ export class Plantbie extends Scene {
                 diffusivity: 0.5,
                 specularity: 0.05,
                 color: hex_color("#00FF00")
+            }),
+            wallnut: new Material(new defs.Phong_Shader(), {
+                ambient: 0.67,
+                diffusivity: 0.5,
+                specularity: 0.05,
+                color: hex_color("#8b4513")
             }),
             cloud: new Material(new defs.Phong_Shader(), {
                 ambient: 0.9,
@@ -345,6 +352,7 @@ export class Plantbie extends Scene {
         this.cool_down = new Array(45).fill(-1);
 
         this.peas = []
+        this.melons = []
         this.buf_plants = [1,0,0,0,0,0,0,0,0,0];
         this.zombie = []
         this.plant_count_down = Math.floor(Math.random() * 5) + 12
@@ -427,30 +435,30 @@ export class Plantbie extends Scene {
             .times(Mat4.translation(x,y,z),);
         let left_leg_matrix = base_matrix.times(Mat4.scale(0.3,0.3,0.3)).times(Mat4.translation(-0.5,1,1));
         left_leg_matrix = left_leg_matrix.times(Mat4.rotation(-Math.PI/4-0.7,0,1,0));
-        this.shapes.zombie_left_leg.draw(context, program_state, left_leg_matrix, this.materials.peashooter);
+        this.shapes.zombie_left_leg.draw(context, program_state, left_leg_matrix, this.materials.zombie_pants);
         let right_leg_matrix = base_matrix.times(Mat4.scale(0.3,0.3,0.3)).times(Mat4.translation(0,1,-1));
         right_leg_matrix = right_leg_matrix.times(Mat4.rotation(-Math.PI/4-0.5,0,1,0));
-        this.shapes.zombie_right_leg.draw(context, program_state, right_leg_matrix, this.materials.peashooter);
+        this.shapes.zombie_right_leg.draw(context, program_state, right_leg_matrix, this.materials.zombie_pants);
         base_matrix = base_matrix.times(Mat4.translation(0,0.015*Math.sin(1.5*(t+Math.PI/4)),0));
         let torso_matrix = base_matrix.times(Mat4.scale(0.6,0.6,0.6)).times(Mat4.translation(-0.2,2.7,0));
         torso_matrix = torso_matrix.times(Mat4.rotation(-Math.PI/4-1,0,1,0)).times(Mat4.rotation(-0.2,1,0,0));
         // let torso_rotation_matrix = Mat4.rotation(0.2*Math.sin(2*t),1,0,0)
         // torso_matrix = torso_matrix.times(torso_rotation_matrix);
-        this.shapes.zombie_torso.draw(context, program_state, torso_matrix, this.materials.peashooter);
+        this.shapes.zombie_torso.draw(context, program_state, torso_matrix, this.materials.zombie_body);
         let left_upper_arm_matrix = base_matrix.times(Mat4.translation(-0.25,1.7,0.5)).times(Mat4.scale(0.15,0.15,0.15));
         left_upper_arm_matrix = left_upper_arm_matrix.times(Mat4.rotation(Math.PI/4+0.8,0,1,0));
         left_upper_arm_matrix=left_upper_arm_matrix.times(Mat4.rotation(Math.PI/4,1,0,0).times(Mat4.translation(0,0,-0.5)));
         left_upper_arm_matrix=left_upper_arm_matrix.times(Mat4.rotation(0.1*Math.sin(4*t+0.25),1,0,0).times(Mat4.translation(0,0,-0.5)));
-        this.shapes.zombie_left_upper_arm.draw(context, program_state, left_upper_arm_matrix, this.materials.black);
-        let left_lower_arm_matrix = Mat4.translation(-.1,-.8,0).times(left_upper_arm_matrix.times(Mat4.scale(2,2,2)));
-        left_lower_arm_matrix = left_lower_arm_matrix.times(Mat4.rotation(Math.PI+0.5,0,1,0));
-        left_lower_arm_matrix = Mat4.translation(-1.55,0.825,0).times(Mat4.rotation(-Math.PI/4,0,0,1)).times(left_lower_arm_matrix);
-        this.shapes.zombie_left_lower_arm.draw(context, program_state, left_lower_arm_matrix, this.materials.black);
+        this.shapes.zombie_left_upper_arm.draw(context, program_state, left_upper_arm_matrix, this.materials.zombie_body);
+        let left_lower_arm_matrix = left_upper_arm_matrix.times(Mat4.translation(-.1,-.8,0)).times(Mat4.translation(-1.55,0.825,0)).times(Mat4.rotation(-Math.PI/4+0.5,0,0,1)).times(Mat4.rotation(Math.PI+0.5,0,1,0)).times(Mat4.scale(2,2,2));
+        left_lower_arm_matrix = Mat4.translation(-0.5,-0.5,-0.2).times(left_lower_arm_matrix);
+        //this is problematic, also change the texture to proper zombie texture
+        this.shapes.zombie_left_lower_arm.draw(context, program_state, left_lower_arm_matrix, this.materials.zombie_body);
         let right_upper_arm_matrix = base_matrix.times(Mat4.translation(-0.25,1.7,-0.5)).times(Mat4.scale(0.15,0.15,0.15));
         right_upper_arm_matrix=right_upper_arm_matrix.times(Mat4.rotation(Math.PI/4+0.8,0,1,0));
         right_upper_arm_matrix=right_upper_arm_matrix.times(Mat4.rotation(Math.PI/4,1,0,0).times(Mat4.translation(0,0,-0.5)));
         right_upper_arm_matrix=right_upper_arm_matrix.times(Mat4.rotation(0.1*Math.sin(4*t+0.25),1,0,0).times(Mat4.translation(0,0,-0.5)));
-        this.shapes.zombie_right_upper_arm.draw(context, program_state, right_upper_arm_matrix, this.materials.peashooter);
+        this.shapes.zombie_right_upper_arm.draw(context, program_state, right_upper_arm_matrix, this.materials.zombie_body);
         let right_lower_arm_matrix = right_upper_arm_matrix;
         right_lower_arm_matrix = right_upper_arm_matrix.times(Mat4.translation(-.1,-.8,0)).times(Mat4.rotation(Math.PI,0,1,0)).times(Mat4.scale(2,2,2));
         if(type!=="flag") right_lower_arm_matrix = Mat4.translation(-0.4,-0.3,0.1).times(right_lower_arm_matrix);
@@ -458,15 +466,15 @@ export class Plantbie extends Scene {
             let flag_matrix = right_lower_arm_matrix;
             flag_matrix = (flag_matrix).times(Mat4.scale(2.5,2.5,2.5));
             flag_matrix = Mat4.translation(0,0.7,-0.1).times(flag_matrix);
-            this.shapes.flag.draw(context, program_state, flag_matrix, this.materials.peashooter);
+            this.shapes.flag.draw(context, program_state, flag_matrix, this.materials.zombie_body);
         }
         else
-            this.shapes.zombie_right_lower_arm.draw(context, program_state, right_lower_arm_matrix, this.materials.peashooter);
+            this.shapes.zombie_right_lower_arm.draw(context, program_state, right_lower_arm_matrix, this.materials.zombie_body);
         let head_matrix = base_matrix.times(Mat4.translation(-0.5,2.6,0)).times(Mat4.scale(0.25,0.25,0.25));
         head_matrix = Mat4.rotation(0.015*Math.sin(1.5*t),0,0,1).times(head_matrix);
         //rotation pivot is a little lower, remember transformation is applied from right to left
         head_matrix = (head_matrix).times(Mat4.rotation(-Math.PI/4-0.5,0,1,0));
-        this.shapes.zombie_head.draw(context, program_state, head_matrix, this.materials.peashooter);
+        this.shapes.zombie_head.draw(context, program_state, head_matrix, this.materials.zombie_head);
         if(type==="bucket"){
             let bucket_matrix = Mat4.translation(0,0.3,0).times(head_matrix).times(Mat4.scale(1.6,1.6,1.6));
             this.shapes.bucket.draw(context, program_state, bucket_matrix, this.materials.black);
@@ -487,6 +495,23 @@ export class Plantbie extends Scene {
         this.shapes.pea.draw(context, program_state, pea_transform, this.materials.pea);
     }
 
+    render_melon(context, program_state, x, y, z){
+
+        // this.peas.append({grid, t});
+        let pea_transform = Mat4.identity().times(Mat4.translation(x, y, z),);
+        pea_transform = pea_transform.times(Mat4.scale(0.48, 0.48, 0.48));
+        this.shapes.watermelon_bullet.draw(context, program_state, pea_transform, this.materials.pea);
+    }
+
+    render_wallnut(context,program_state,x,y,z,t){
+        let plant_transform = Mat4.identity();
+        plant_transform = plant_transform.times(Mat4.scale(.5,.5,.5));
+        plant_transform = Mat4.rotation(Math.PI/4+0.5, 0,1,0).times(plant_transform);
+        let factor = 0.2*Math.sin(8*t);
+        plant_transform = Mat4.rotation(factor, 1,0,0).times(plant_transform);
+        plant_transform = Mat4.translation(x-8,y+0.8,z-4).times(plant_transform);
+        this.shapes.wallnut.draw(context,program_state,plant_transform,this.materials.wallnut);
+    }
 
     render_peashooter(context,program_state,x,y,z,t){
         let plant_transform = Mat4.identity()
@@ -582,6 +607,7 @@ export class Plantbie extends Scene {
                 this.cool_down = new Array(45).fill(-1);
 
                 this.peas = []
+                this.melons = []
                 this.buf_plants = [1,0,0,0,0,0,0,0,0,0];
                 this.zombie = []
                 this.plant_count_down = Math.floor(Math.random() * 5) + 12
@@ -618,13 +644,13 @@ export class Plantbie extends Scene {
                 let temp = this.grid_index[0] * 9 + this.grid_index[1];
                 if(this.plant_here[temp][0]===0 && this.buf_plants[this.buffer_index] !== 0) {
                     this.plant_here[temp][0] = this.buf_plants[this.buffer_index];
-                    if(this.buf_plants[this.buffer_index] === 1){
+                    if(this.buf_plants[this.buffer_index] === 1){   //peashooter
                         this.plant_here[temp][1] = 600
                     }
-                    else if(this.buf_plants[this.buffer_index] === 2){
+                    else if(this.buf_plants[this.buffer_index] === 2){  //melon
                         this.plant_here[temp][1] = 800
                     }
-                    else if(this.buf_plants[this.buffer_index] === 3){
+                    else if(this.buf_plants[this.buffer_index] === 3){  //wallnut
                         this.plant_here[temp][1] = 4000
                     }
 
@@ -777,8 +803,9 @@ export class Plantbie extends Scene {
             }
 
             if(this.zombies[i][1] !== -1){
-                // console.log("stop moving and eat")
+                console.log("stop moving and eat")
                 //problem: utilities & eating hands positions are affected by change / displacement in x for some reason
+                console.log("dt: " + dt + "displacement: " + displacement + "x:" + x);
                 this.zombies[i][0].base[0] = this.zombies[i][1];
                 this.render_eating_zombie(context,program_state,this.zombies[i][1]-8,y,z-4,t,this.zombies[i][0].type);
 
@@ -847,6 +874,47 @@ export class Plantbie extends Scene {
                     break;
                 }
             }
+            for(let j=0; j<this.melons.length; ++j){
+                let ind = this.melons[j][0];
+                let st = this.melons[j][1];
+                let pos = this.grid_positions[ind];
+                let dt = (t - st);
+                //change these
+                let pea_center = [pos[0] + dt * 2.5 - 8-0.5, pos[1]+2-(dt-2)*(dt-2)+2*2.5, pos[2] - 4-0.1];
+                let pea_top_left = [pea_center[0]-0.48, pea_center[1]+0.48, pea_center[2]+0.48];
+                let pea_bot_right = [pea_center[0]+0.48, pea_center[1]-0.48, pea_center[2]-0.48];
+                let pea_cords = [pea_top_left, pea_bot_right];
+                let cen = 0;
+                curZombie = this.zombies[i][0];
+                x = curZombie.base[0];
+                y = curZombie.base[1];
+                z = curZombie.base[2]
+                dt = t-curZombie.birth_time - (this.zombies[i][3] * 0.8);
+                displacement = dt*curZombie.speed[0]; //for now zombies can only run straight in x direction. Note that speed is always positive
+                x = x - displacement;
+                if(this.zombies[i][1] !== -1){
+                    x = this.zombies[i][1];
+                }
+                cen = [x-8, y, z-4];
+                let zombie_cords = [[cen[0]-0.5, cen[1]+2.5, cen[2]+0.5], [cen[0]+0.5, cen[1], cen[2]-0.5]];
+                console.log(i, j)
+                console.log(pea_center[0], pea_center[1], pea_center[2]);
+                console.log(cen[0], cen[1], cen[2]);
+
+                if(collision_detection(pea_cords, zombie_cords)){
+                    console.log("zombie hit");
+                    console.log(this.melons);
+                    console.log(pea_cords);
+                    console.log(zombie_cords);
+                    this.melons.splice(j, 1);
+                    // i--;
+                    curZombie.health -= 200;
+                    this.zombies[i][0] = curZombie;
+                    console.log(this.melons);
+                    console.log(curZombie)
+                    break;
+                }
+            }
         }
 
         //---------rendering zombies finished
@@ -879,16 +947,12 @@ export class Plantbie extends Scene {
                 else if(this.plant_here[i][0] === 2){
                     this.render_watermelon(context, program_state, pos[0], pos[1], pos[2], t);
                     if((t - this.cool_down[i]) > 0 && (t - this.cool_down[i]) < 0.1){
-                        this.peas.push([i, t]);
+                        this.melons.push([i, t]);
                         this.cool_down[i] = t + 2.5;
                     }
                 }
                 else if(this.plant_here[i][0] === 3){
-                    this.render_watermelon(context, program_state, pos[0], pos[1], pos[2], t); // change to render wallnut
-                    if((t - this.cool_down[i]) > 0 && (t - this.cool_down[i]) < 0.1){
-                        this.peas.push([i, t]);
-                        this.cool_down[i] = t + 2.5;
-                    }
+                    this.render_wallnut(context, program_state, pos[0], pos[1], pos[2], t); // change to render wallnut
                 }
             }
             // Draw the inner square
@@ -907,7 +971,7 @@ export class Plantbie extends Scene {
         }
 
         // this.shapes.test_rec.draw(context, program_state, Mat4.identity(), this.materials.vertical_rectangle);
-
+        //DONE
         for(let i=0; i<this.peas.length; i++) {
             let ind = this.peas[i][0];
             let st = this.peas[i][1];
@@ -923,6 +987,28 @@ export class Plantbie extends Scene {
             } else {
                 this.peas.splice(i, 1);
                 if (i >= this.peas.length) {
+                    break;
+                }
+                i--;
+            }
+
+        }
+        for(let i=0; i<this.melons.length; i++) {
+            let ind = this.melons[i][0];
+            let st = this.melons[i][1];
+            let pos = this.grid_positions[ind];
+            let dt = (t - st);
+            // let pea_center = [pos[0]+dt*2.5-8+0.2, pos[1]+1.13, pos[2]-4-0.1];
+            // let pea_top_left = [pea_center[0]-0.25, pea_center[1]+0.25, pea_center[2]+0.25];
+            // let pea_bot_right = [pea_center[0]+0.25, pea_center[1]-0.25, pea_center[2]-0.25];
+
+
+            if (dt < 8) {
+                this.render_melon(context, program_state, pos[0] + dt * 2.5 - 8-0.5, pos[1]+2-(dt-2)*(dt-2)+2*2.5, pos[2] - 4-0.1);
+            } else {
+                console.log("here!" + this.melons);
+                this.melons.splice(i, 1);
+                if (i >= this.melons.length) {
                     break;
                 }
                 i--;
